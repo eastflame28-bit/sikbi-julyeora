@@ -72,7 +72,8 @@ function pickModel(models) {
 export async function connectGemini(rawKey) {
   const key = String(rawKey || "").trim();
   if (!key) throw new GeminiError("API 키를 붙여 넣어 주세요.", "empty");
-  if (!/^[\w-]{20,}$/.test(key)) throw new GeminiError("키 모양이 이상해요. AI Studio에서 복사한 키를 그대로 붙여 넣어 주세요.", "invalid");
+  // 예전 키는 AIza…, 새 키는 AQ.… 처럼 점이 들어간다
+  if (!/^[\w.-]{20,}$/.test(key)) throw new GeminiError("키 모양이 이상해요. AI Studio에서 복사한 키를 그대로 붙여 넣어 주세요.", "invalid");
   const data = await call("models?pageSize=200", key);
   const model = pickModel(data.models || []);
   const info = { key, model, at: Date.now() };

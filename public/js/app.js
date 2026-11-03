@@ -213,7 +213,7 @@ function renderTopbar() {
         <p class="muted small">키가 없어도 기본 레시피로 찾을 수 있어요. 키를 넣으면 AI가 내 재료에 맞춘 요리를 더 찾아 줘요.</p>
         <label class="sr-only" for="key-input">제미나이 API 키</label>
         <div class="add-row">
-          <input class="input" id="key-input" data-key="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…로 시작하는 키 붙여 넣기" data-enter="ai-connect" ${k.checking ? "disabled" : ""}>
+          <input class="input" id="key-input" data-key="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="AI Studio에서 복사한 키 붙여 넣기" data-enter="ai-connect" ${k.checking ? "disabled" : ""}>
           <button class="btn btn-primary" data-act="ai-connect" data-key="ai-connect" ${k.checking ? "disabled" : ""}>${k.checking ? "확인 중…" : "연결"}</button>
         </div>
         ${k.error ? `<p class="err" role="alert">${icon("alert")}${esc(k.error)}</p>` : ""}
