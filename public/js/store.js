@@ -1,19 +1,16 @@
-// 데이터 저장소. Firebase 설정이 있으면 Firestore(클라우드), 없으면 이 브라우저(localStorage)에 저장합니다.
+// 데이터 저장소. 구글로 로그인하면 Supabase(클라우드), 아니면 이 브라우저(localStorage)에 저장합니다.
 //
-// Firestore 구조
-//   users/{uid}                 { profile, pantry, updatedAt }
-//   users/{uid}/recipes/{id}    저장한 레시피(즐겨찾기·나만의 레시피)
-//   users/{uid}/cooks/{id}      요리 완료 기록
+// Supabase 표 (supabase/schema.sql)
+//   user_data   { user_id, profile, pantry }
+//   my_recipes  { user_id, id, data }   저장한 레시피(즐겨찾기·메모·영상에서 정리)
+//   cooks       { user_id, id, data }   요리 완료 기록
 
 import { config } from "./config.js";
 
-const LS_KEY = "sikbi:v1";
+const LS_KEY = "sikbi:v2";
 
 export const DEFAULT_PROFILE = {
-  onboarded: false,
-  skill: "beginner",
   servings: 2,
-  allergies: [],
   excluded: [],
   eatOutPrice: 12000,
   theme: "system",
@@ -40,8 +37,11 @@ function writeLocal(data) {
   }
 }
 
+const hasAnything = (d) => d.pantry.length || d.recipes.length || d.cooks.length;
+
 class LocalStore {
   mode = "local";
+  user = null;
   async init() {
     this.data = readLocal();
     return this.data;
@@ -50,8 +50,7 @@ class LocalStore {
   async saveProfile(profile) { this.data.profile = profile; this.#flush(); }
   async savePantry(pantry) { this.data.pantry = pantry; this.#flush(); }
   async putRecipe(recipe) {
-    const list = this.data.recipes.filter((r) => r.id !== recipe.id);
-    this.data.recipes = [recipe, ...list];
+    this.data.recipes = [recipe, ...this.data.recipes.filter((r) => r.id !== recipe.id)];
     this.#flush();
   }
   async removeRecipe(id) { this.data.recipes = this.data.recipes.filter((r) => r.id !== id); this.#flush(); }
@@ -61,82 +60,110 @@ class LocalStore {
 
 class CloudStore {
   mode = "cloud";
-  async init() {
-    const v = config.firebaseSdkVersion;
-    const base = `https://www.gstatic.com/firebasejs/${v}`;
-    const [{ initializeApp }, auth, fs] = await Promise.all([
-      import(`${base}/firebase-app.js`),
-      import(`${base}/firebase-auth.js`),
-      import(`${base}/firebase-firestore.js`),
-    ]);
-    this.fs = fs;
-    this.app = initializeApp(config.firebase);
-    const a = auth.getAuth(this.app);
-    // 저장된 로그인 상태를 먼저 불러와야 새로고침할 때마다 새 익명 계정이 생기지 않는다
-    await a.authStateReady();
-    const user0 = a.currentUser || (await auth.signInAnonymously(a)).user;
-    this.uid = user0.uid;
-    this.db = fs.initializeFirestore(this.app, { localCache: fs.persistentLocalCache() });
+  constructor(sb, user) { this.sb = sb; this.user = user; }
 
-    const userRef = fs.doc(this.db, "users", this.uid);
-    const [userSnap, recipeSnap, cookSnap] = await Promise.all([
-      fs.getDoc(userRef),
-      fs.getDocs(fs.query(fs.collection(userRef, "recipes"), fs.orderBy("updatedAt", "desc"))),
-      fs.getDocs(fs.query(fs.collection(userRef, "cooks"), fs.orderBy("date", "desc"), fs.limit(200))),
+  async init() {
+    const [u, r, c] = await Promise.all([
+      this.sb.from("user_data").select("profile, pantry").maybeSingle(),
+      this.sb.from("my_recipes").select("data").order("updated_at", { ascending: false }),
+      this.sb.from("cooks").select("data").order("created_at", { ascending: false }).limit(300),
     ]);
-    const user = userSnap.exists() ? userSnap.data() : {};
+    for (const res of [u, r, c]) if (res.error) throw res.error;
     this.data = {
-      profile: { ...DEFAULT_PROFILE, ...(user.profile || {}) },
-      pantry: user.pantry || [],
-      recipes: recipeSnap.docs.map((d) => d.data()),
-      cooks: cookSnap.docs.map((d) => d.data()),
+      profile: { ...DEFAULT_PROFILE, ...(u.data?.profile || {}) },
+      pantry: u.data?.pantry || [],
+      recipes: r.data.map((x) => x.data),
+      cooks: c.data.map((x) => x.data),
     };
+
+    // 처음 로그인하면 이 기기에 쓰던 데이터를 계정으로 옮긴다
+    const local = readLocal();
+    if (!u.data && hasAnything(local)) {
+      this.data = { ...local, profile: { ...DEFAULT_PROFILE, ...local.profile } };
+      await this.#saveUser();
+      if (local.recipes.length) await this.#check(this.sb.from("my_recipes").upsert(local.recipes.map((x) => ({ id: x.id, data: x }))));
+      if (local.cooks.length) await this.#check(this.sb.from("cooks").upsert(local.cooks.map((x) => ({ id: x.id, data: x }))));
+      this.migrated = true;
+    }
     return this.data;
   }
-  #user() { return this.fs.doc(this.db, "users", this.uid); }
-  async saveProfile(profile) {
-    this.data.profile = profile;
-    await this.fs.setDoc(this.#user(), { profile, updatedAt: Date.now() }, { merge: true });
+
+  async #check(q) { const { error } = await q; if (error) throw error; }
+  #saveUser() {
+    return this.#check(this.sb.from("user_data").upsert({
+      user_id: this.user.id, profile: this.data.profile, pantry: this.data.pantry, updated_at: new Date().toISOString(),
+    }));
   }
-  async savePantry(pantry) {
-    this.data.pantry = pantry;
-    await this.fs.setDoc(this.#user(), { pantry, updatedAt: Date.now() }, { merge: true });
-  }
+  async saveProfile(profile) { this.data.profile = profile; await this.#saveUser(); }
+  async savePantry(pantry) { this.data.pantry = pantry; await this.#saveUser(); }
   async putRecipe(recipe) {
     this.data.recipes = [recipe, ...this.data.recipes.filter((r) => r.id !== recipe.id)];
-    await this.fs.setDoc(this.fs.doc(this.#user(), "recipes", recipe.id), recipe);
+    await this.#check(this.sb.from("my_recipes").upsert({ id: recipe.id, data: recipe, updated_at: new Date().toISOString() }));
   }
   async removeRecipe(id) {
     this.data.recipes = this.data.recipes.filter((r) => r.id !== id);
-    await this.fs.deleteDoc(this.fs.doc(this.#user(), "recipes", id));
+    await this.#check(this.sb.from("my_recipes").delete().eq("id", id));
   }
   async addCook(cook) {
     this.data.cooks = [cook, ...this.data.cooks];
-    await this.fs.setDoc(this.fs.doc(this.#user(), "cooks", cook.id), cook);
+    await this.#check(this.sb.from("cooks").insert({ id: cook.id, data: cook }));
   }
   async resetAll() {
-    const batch = this.fs.writeBatch(this.db);
-    for (const r of this.data.recipes) batch.delete(this.fs.doc(this.#user(), "recipes", r.id));
-    for (const c of this.data.cooks) batch.delete(this.fs.doc(this.#user(), "cooks", c.id));
-    batch.delete(this.#user());
-    await batch.commit();
+    await Promise.all(["my_recipes", "cooks", "user_data"].map((t) => this.#check(this.sb.from(t).delete().eq("user_id", this.user.id))));
     this.data = empty();
   }
 }
 
-// 클라우드 연결에 실패하면 조용히 넘어가지 않고 error를 함께 돌려줘 화면에 알린다.
+// ───────── Supabase 연결과 로그인 ─────────
+
+let client = null;
+
+export async function supabase() {
+  if (!config.supabase) return null;
+  if (!client) {
+    const { createClient } = await import(config.supabaseSdk);
+    client = createClient(config.supabase.url, config.supabase.anonKey, {
+      auth: { flowType: "pkce", persistSession: true, detectSessionInUrl: true },
+    });
+  }
+  return client;
+}
+
+export async function signInWithGoogle() {
+  const sb = await supabase();
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: location.origin + location.pathname },
+  });
+  if (error) throw error;
+}
+
+export async function signOut() {
+  const sb = await supabase();
+  await sb?.auth.signOut();
+}
+
+// 로그인돼 있으면 클라우드, 아니면 이 기기. 클라우드 연결에 실패하면 error를 함께 돌려줘 화면에 알린다.
 export async function openStore() {
-  if (config.firebase) {
-    const cloud = new CloudStore();
-    try {
-      await cloud.init();
-      return { store: cloud, error: null };
-    } catch (err) {
-      console.error("Firebase 연결 실패", err);
-      const local = new LocalStore();
-      await local.init();
-      return { store: local, error: err };
+  let sb = null;
+  try {
+    sb = await supabase();
+    if (sb) {
+      const { data } = await sb.auth.getSession();
+      // 구글 로그인에서 돌아오면 주소에 남은 ?code=… 를 지운다
+      if (location.search.includes("code=")) history.replaceState(null, "", location.pathname + location.hash);
+      const user = data.session?.user;
+      if (user) {
+        const cloud = new CloudStore(sb, user);
+        await cloud.init();
+        return { store: cloud, error: null };
+      }
     }
+  } catch (err) {
+    console.error("Supabase 연결 실패", err);
+    const local = new LocalStore();
+    await local.init();
+    return { store: local, error: err };
   }
   const local = new LocalStore();
   await local.init();

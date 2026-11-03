@@ -1,23 +1,16 @@
-// 재료 고르기 화면에 보여 줄 기본 재료 목록과 이름 맞추기 규칙
+// 재료 이름 목록과 이름 맞추기 규칙
 
-export const CATEGORIES = [
-  { id: "basic", label: "기본 양념", emoji: "🧂", kind: "seasoning",
-    items: ["소금", "설탕", "식용유", "참기름", "들기름", "통깨", "후추", "다진마늘"] },
-  { id: "jang", label: "장·간장", emoji: "🫙", kind: "seasoning",
-    items: ["진간장", "양조간장", "국간장", "고추장", "된장", "쌈장"] },
-  { id: "sauce", label: "액젓·소스", emoji: "🍶", kind: "seasoning",
-    items: ["멸치액젓", "까나리액젓", "굴소스", "맛술", "식초", "올리고당", "케첩", "마요네즈"] },
-  { id: "powder", label: "가루", emoji: "🌶️", kind: "seasoning",
-    items: ["고춧가루", "밀가루", "부침가루", "전분", "카레가루"] },
-  { id: "veg", label: "채소", emoji: "🥬", kind: "fridge",
-    items: ["양파", "대파", "마늘", "감자", "당근", "애호박", "오이", "콩나물", "시금치", "버섯", "양배추", "청양고추", "무"] },
-  { id: "protein", label: "두부·계란·고기", emoji: "🥚", kind: "fridge",
-    items: ["두부", "계란", "돼지고기", "닭고기", "소고기", "참치캔", "어묵", "햄", "스팸"] },
-  { id: "etc", label: "기타", emoji: "🍚", kind: "fridge",
-    items: ["밥", "김치", "라면", "떡", "김", "우유", "치즈", "국수"] },
-];
+// 집에 흔히 있는 기본 양념. '기본 양념' 칸에서 한 번에 고른다.
+export const BASICS = ["소금", "설탕", "식용유", "진간장", "국간장", "참기름", "고춧가루", "고추장", "된장", "다진마늘", "후추", "통깨", "식초", "맛술", "올리고당", "굴소스", "멸치액젓"];
 
-export const KNOWN = new Map(CATEGORIES.flatMap((c) => c.items.map((n) => [n, c.id])));
+// 재료 입력칸 아래에 보여 줄 자주 쓰는 재료 (이미 넣은 것은 빼고 앞에서 5개)
+export const SUGGEST = ["계란", "양파", "대파", "두부", "김치", "감자", "돼지고기", "밥", "참치캔", "애호박", "당근", "버섯", "콩나물", "어묵", "스팸", "닭고기", "소고기", "떡", "라면", "치즈"];
+
+// 입력할 때 자동 완성에 쓰는 이름
+export const ALL_NAMES = [...new Set([...SUGGEST, ...BASICS,
+  "양조간장", "쌈장", "까나리액젓", "케첩", "마요네즈", "밀가루", "부침가루", "전분", "카레가루", "들기름", "버터",
+  "마늘", "오이", "시금치", "양배추", "청양고추", "무", "가지", "브로콜리", "숙주", "부추", "깻잎", "토마토", "배추",
+  "햄", "소시지", "베이컨", "새우", "오징어", "고등어", "멸치", "다시마", "김", "우유", "국수", "우동면", "만두", "당면", "순두부", "청경채"])];
 
 // 레시피 재료 이름 → 이것만 있어도 '있음'으로 보는 이름들
 const ALIAS = {
@@ -33,10 +26,16 @@ const ALIAS = {
   통깨: ["통깨", "깨"],
   액젓: ["멸치액젓", "까나리액젓", "액젓"],
   멸치액젓: ["멸치액젓", "까나리액젓"],
+  계란: ["계란", "달걀"],
+  달걀: ["계란", "달걀"],
   햄: ["햄", "스팸"],
   스팸: ["스팸", "햄"],
-  버섯: ["버섯", "표고버섯", "느타리버섯", "팽이버섯", "새송이버섯"],
-  밥: ["밥", "햇반", "즉석밥"],
+  소시지: ["소시지", "비엔나소시지"],
+  버섯: ["버섯", "표고버섯", "느타리버섯", "팽이버섯", "새송이버섯", "양송이버섯"],
+  밥: ["밥", "햇반", "즉석밥", "찬밥"],
+  숙주: ["숙주", "숙주나물"],
+  숙주나물: ["숙주", "숙주나물"],
+  우동면: ["우동면", "우동"],
 };
 
 // 따로 고르지 않아도 있다고 보는 재료
@@ -52,11 +51,11 @@ export function hasIngredient(pantryNames, name) {
   return pantryNames.some((p) => candidates.includes(p) || (n.length >= 2 && p.includes(n)) || (p.length >= 2 && n.includes(p)));
 }
 
-export function categoryOf(name) {
-  return KNOWN.get(norm(name)) || "etc";
-}
-
-export function kindOf(name) {
-  const cat = CATEGORIES.find((c) => c.id === categoryOf(name));
-  return cat ? cat.kind : "fridge";
+// 공용 창고에서 찾을 때 쓸 이름 목록 (내 재료 + 같은 재료로 보는 이름)
+export function expandNames(pantryNames) {
+  const out = new Set(pantryNames);
+  for (const p of pantryNames) {
+    for (const [k, list] of Object.entries(ALIAS)) if (k === p || list.includes(p)) { out.add(k); list.forEach((x) => out.add(x)); }
+  }
+  return [...out];
 }

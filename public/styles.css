@@ -79,7 +79,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 400 16px/1.6 "Noto Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  font: 400 17px/1.6 "Noto Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
   word-break: keep-all;
   -webkit-font-smoothing: antialiased;
 }
@@ -122,7 +122,7 @@ h1, h2, h3, p { margin: 0; }
 
 .tabbar {
   position: fixed; inset: auto 0 0 0; z-index: 20;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
@@ -135,7 +135,7 @@ h1, h2, h3, p { margin: 0; }
 .tab {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   min-height: 44px; border: 0; background: none; color: var(--text-2);
-  font-size: 12px; font-weight: 500; text-decoration: none;
+  font-size: 13px; font-weight: 500; text-decoration: none;
   transition: color .16s var(--ease);
 }
 .tab svg { width: 24px; height: 24px; }
@@ -170,10 +170,10 @@ h1, h2, h3, p { margin: 0; }
 /* ───────── 타이포 & 공통 ───────── */
 
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 8px 0 20px; }
-.page-title { font-size: 26px; line-height: 1.3; font-weight: 800; letter-spacing: -.02em; }
+.page-title { font-size: 28px; line-height: 1.3; font-weight: 800; letter-spacing: -.02em; }
 .page-sub { color: var(--text-2); font-size: 15px; margin-top: 4px; }
 .section { margin-top: 32px; }
-.section-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.section-title { font-size: 19px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 .section-title .count { color: var(--text-2); font-weight: 500; font-size: 14px; }
 .section-title svg { width: 20px; height: 20px; flex: none; color: var(--brand); }
 .filter-row .label svg { width: 22px; height: 22px; color: var(--text-2); }
@@ -187,8 +187,8 @@ h1, h2, h3, p { margin: 0; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 48px; padding: 0 20px; border-radius: var(--r-sm);
-  border: 1px solid transparent; font-weight: 700; font-size: 16px;
+  min-height: 52px; padding: 0 20px; border-radius: var(--r-sm);
+  border: 1px solid transparent; font-weight: 700; font-size: 17px;
   text-decoration: none; transition: transform .12s var(--ease), background .16s, opacity .16s;
 }
 .btn:active { transform: scale(.98); }
@@ -199,7 +199,8 @@ h1, h2, h3, p { margin: 0; }
 .btn-ghost:hover { background: var(--surface-2); }
 .btn-danger { background: var(--danger-soft); color: var(--danger); }
 .btn-block { width: 100%; }
-.btn-sm { min-height: 40px; padding: 0 14px; font-size: 14px; }
+.btn-sm { min-height: 44px; padding: 0 14px; font-size: 15px; }
+.btn-lg { min-height: 58px; font-size: 18px; border-radius: var(--r-md); }
 .btn[disabled] { opacity: .45; cursor: not-allowed; }
 
 .icon-btn {
@@ -233,9 +234,9 @@ h1, h2, h3, p { margin: 0; }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
-  min-height: 40px; padding: 0 14px; border-radius: 999px;
+  min-height: 44px; padding: 0 16px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--surface); color: var(--text);
-  font-size: 15px; font-weight: 500;
+  font-size: 16px; font-weight: 500;
   transition: background .16s var(--ease), border-color .16s, color .16s, transform .16s var(--ease);
 }
 .chip:hover { border-color: var(--brand); }
@@ -254,9 +255,11 @@ h1, h2, h3, p { margin: 0; }
   background: var(--surface-2); border-radius: var(--r-sm); padding: 4px; gap: 4px; width: 100%;
 }
 .seg button {
-  min-height: 40px; border: 0; border-radius: 9px; background: transparent;
-  font-weight: 500; font-size: 14px; color: var(--text-2);
+  min-height: 44px; border: 0; border-radius: 9px; background: transparent;
+  font-weight: 500; font-size: 15px; color: var(--text-2);
 }
+.seg button { white-space: nowrap; padding: 0 4px; }
+@media (max-width: 400px) { .seg button { font-size: 14px; } }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 700; box-shadow: var(--shadow); }
 
 /* ───────── 입력 ───────── */
@@ -265,7 +268,7 @@ h1, h2, h3, p { margin: 0; }
 .field label { font-weight: 500; font-size: 14px; color: var(--text-2); }
 
 .input, .textarea, .select {
-  width: 100%; min-height: 48px; padding: 12px 14px;
+  width: 100%; min-height: 52px; padding: 12px 14px;
   border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface);
   transition: border-color .16s;
 }
@@ -319,8 +322,8 @@ kbd, .hint {
 @media (min-width: 1200px) { .recipe-grid { grid-template-columns: repeat(3, 1fr); } }
 
 .rcard {
-  display: grid; grid-template-columns: 56px 1fr; gap: 14px; align-items: start;
-  text-align: left; width: 100%; padding: 16px;
+  display: grid; grid-template-columns: 48px 1fr; gap: 14px; align-items: start;
+  text-align: left; width: 100%; padding: 16px 18px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow);
   text-decoration: none; color: inherit;
   transition: transform .16s var(--ease), border-color .16s;
@@ -328,15 +331,18 @@ kbd, .hint {
 }
 .rcard:hover { transform: translateY(-2px); border-color: var(--brand); }
 .rcard .thumb {
-  width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center;
-  font-size: 28px; background: var(--accent-soft);
+  width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
+  font-size: 26px; background: var(--accent-soft);
 }
-.rcard h3 { font-size: 17px; font-weight: 700; line-height: 1.35; }
-.rcard .meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--text-2); margin-top: 4px; }
-.rcard .meta span { display: inline-flex; align-items: center; gap: 4px; }
-.rcard .meta svg { width: 14px; height: 14px; }
-.rcard .reason { font-size: 14px; color: var(--text-2); margin-top: 8px; }
-.rcard .need { margin-top: 8px; }
+.rcard .body { display: grid; gap: 4px; min-width: 0; }
+.rcard h3 { font-size: 19px; font-weight: 800; line-height: 1.35; display: flex; gap: 6px; align-items: center; }
+.rcard h3 .fav { width: 18px; height: 18px; color: var(--accent); fill: currentColor; flex: none; }
+.rcard .meta { font-size: 15px; color: var(--text-2); }
+.rcard .need { display: inline-flex; gap: 6px; align-items: center; font-size: 15px; font-weight: 700; color: var(--warn); }
+.rcard .need svg { width: 16px; height: 16px; flex: none; }
+.src { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; color: var(--text-2); }
+.src svg { width: 14px; height: 14px; }
+.src.ok { color: var(--brand); font-weight: 700; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
@@ -499,6 +505,86 @@ kbd, .hint {
 .stepper output { min-width: 48px; text-align: center; font-weight: 700; }
 
 .kbd-help { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 14px; align-items: center; }
+
+/* ───────── 위쪽 바와 AI 연결 ───────── */
+
+.topbar { position: sticky; top: 0; z-index: 15; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 720px; margin: 0 auto; padding: 8px var(--gutter); min-height: 60px; }
+.topbar .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; color: var(--text); text-decoration: none; }
+.topbar .brand img { width: 32px; height: 32px; border-radius: 9px; }
+.ai-pill {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 15px; font-weight: 700; color: var(--text);
+}
+.ai-pill .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); box-shadow: inset 0 0 0 2px var(--text-2); }
+.ai-pill.on { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
+.ai-pill.on .dot { background: #3BA36B; box-shadow: none; }
+.ai-pill[aria-expanded="true"] { box-shadow: 0 0 0 3px var(--brand-soft); }
+.ai-panel { max-width: 720px; margin: 0 auto; padding: 4px var(--gutter) 18px; display: grid; gap: 10px; animation: fade .16s; }
+.ai-panel h2 { font-size: 19px; font-weight: 800; display: flex; gap: 8px; align-items: center; }
+.ai-panel h2 svg { width: 22px; height: 22px; color: var(--brand); }
+.ai-panel .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.err { display: flex; gap: 8px; align-items: flex-start; color: var(--danger); font-size: 15px; font-weight: 500; }
+.err svg { width: 18px; height: 18px; flex: none; margin-top: 3px; }
+.fine { font-size: 13px; color: var(--text-2); }
+.link { color: var(--brand); font-weight: 700; font-size: 15px; text-underline-offset: 3px; }
+
+/* ───────── 요리 찾기 ───────── */
+
+.find-head { margin: 12px 0 16px; }
+.find-head .page-title { font-size: 30px; }
+.input-lg { min-height: 56px; font-size: 18px; }
+.input-lg::-webkit-calendar-picker-indicator { display: none !important; }
+.hint-line { font-size: 14px; color: var(--text-2); }
+.hint-line kbd { font-size: 11px; padding: 2px 5px; }
+.hint-line.center { text-align: center; margin-top: 8px; }
+.chips.mine { margin-top: 16px; }
+.chip.on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); font-weight: 700; }
+.chip.ghost { border-style: dashed; color: var(--text-2); }
+.suggest { margin-top: 20px; display: grid; gap: 8px; }
+.basics { margin: 20px 0 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); }
+.basics summary { list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 56px; padding: 0 16px; cursor: pointer; }
+.basics summary::-webkit-details-marker { display: none; }
+.basics .chev, .history-box .chev { width: 20px; height: 20px; color: var(--text-2); transition: transform .16s var(--ease); flex: none; }
+.basics[open] .chev, .history-box[open] .chev { transform: rotate(90deg); }
+.basics .chips { padding: 0 16px 16px; }
+.small-loading { padding: 24px 16px; }
+.small-loading img { width: 120px; }
+.ai-box { margin-top: 28px; padding: 18px; border-radius: var(--r-md); border: 1px dashed var(--line); display: grid; gap: 12px; justify-items: start; }
+.ai-box p { line-height: 1.6; }
+@media (min-width: 640px) { .ai-box { grid-template-columns: 1fr auto; align-items: center; } }
+
+/* ───────── 레시피 보기 (2차) ───────── */
+
+.recipe-hero .meta { color: var(--text-2); margin: 4px 0 2px; font-size: 16px; }
+.summary { margin-top: 14px; color: var(--text-2); }
+.need-line { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-sm); background: var(--warn-soft); color: var(--warn); font-size: 15px; margin-bottom: 8px; }
+.need-line svg { width: 18px; height: 18px; flex: none; margin-top: 3px; }
+.ing-list .sub { display: block; font-size: 14px; color: var(--brand); }
+.ing-list .check-need { color: var(--warn); font-weight: 700; }
+.ing-list.compact li { padding: 6px 0; }
+.aside .btn-lg { margin-top: 16px; }
+.link-row { margin-top: 20px; }
+.note-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+@media (pointer: coarse) { .kbd-hint { display: none; } }
+.cook-top .stepcount { font-weight: 700; font-size: 15px; }
+.cook-meta { margin-top: 10px; display: flex; gap: 6px; align-items: center; color: var(--text-2); }
+.cook-meta svg { width: 18px; height: 18px; }
+
+/* ───────── 내 레시피 (2차) ───────── */
+
+.video-card { display: grid; gap: 12px; }
+.video-card .row { display: flex; gap: 8px; justify-content: flex-end; }
+.draft-title { font-size: 18px; }
+.draft-steps { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 15px; }
+.history-box summary { list-style: none; display: flex; justify-content: space-between; align-items: center; min-height: 52px; font-weight: 700; cursor: pointer; }
+.history-box summary::-webkit-details-marker { display: none; }
+
+@media (min-width: 900px) {
+  .app-shell.has-tabbar .topbar { margin-left: 232px; }
+  .topbar-row, .ai-panel { max-width: 1040px; padding-left: 40px; padding-right: 40px; }
+  .topbar .brand { visibility: hidden; }
+}
 
 /* ───────── 처음 설정 ───────── */
 
