@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// 각 사용자는 자기 데이터(users/{자기 uid} 아래)만 읽고 쓸 수 있다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(["profile", "pantry", "updatedAt"])
+        && (!("pantry" in request.resource.data) || request.resource.data.pantry.size() <= 200);
+
+      match /recipes/{recipeId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.id == recipeId
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 100;
+      }
+
+      match /cooks/{cookId} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid) && request.resource.data.id == cookId;
+      }
+    }
+
+    // 사용량 기록은 서버(Cloud Functions)만 쓴다
+    match /usage/{doc} {
+      allow read, write: if false;
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

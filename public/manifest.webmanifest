@@ -1,0 +1,16 @@
+{
+  "name": "식비를 줄여라",
+  "short_name": "식비를줄여라",
+  "description": "냉장고 속 재료로 오늘 한 끼, 자신 있게.",
+  "lang": "ko",
+  "start_url": "./#/pantry",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FAF8F3",
+  "theme_color": "#246348",
+  "icons": [
+    { "src": "assets/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>식비를 줄여라</title>
+  <meta name="description" content="집에 있는 양념과 냉장고 재료로 지금 만들 수 있는 요리를 AI가 추천해 드려요. 내 실력과 시간에 맞춘 레시피로 식비를 줄여 보세요.">
+  <meta name="theme-color" content="#246348" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#151A17" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta property="og:title" content="식비를 줄여라">
+  <meta property="og:description" content="냉장고 속 재료로 오늘 한 끼, 자신 있게.">
+  <meta property="og:image" content="assets/og.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <div class="app-shell">
+    <nav class="tabbar" id="tabbar" aria-label="주요 메뉴"></nav>
+    <main id="main" class="screen" tabindex="-1"></main>
+  </div>
+  <div id="overlay-root"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <noscript><p class="noscript">이 앱을 쓰려면 자바스크립트를 켜 주세요.</p></noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
