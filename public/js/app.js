@@ -150,6 +150,7 @@ window.addEventListener("hashchange", () => {
 // ───────── 렌더링 ─────────
 
 function render({ focusMain = false } = {}) {
+  if (!state.data) return; // 아직 불러오는 중 (시작할 때 다시 그린다)
   const active = document.activeElement;
   const key = active?.dataset?.key;
 
@@ -874,7 +875,7 @@ function viewSettings() {
       <div class="setting"><div class="head"><div><div class="t">내 데이터 모두 지우기</div><div class="d">되돌릴 수 없어요.</div></div><button class="btn btn-danger btn-sm" data-act="reset" data-key="reset">${icon("trash")} 지우기</button></div></div>
     </div>
   </div>
-  <p class="muted small" style="text-align:center;margin-top:32px">식비를 줄여라 · 베타</p>`;
+  <p class="muted small" style="text-align:center;margin-top:32px">식비를 줄여라 · 베타 · <a class="link" href="privacy.html" data-key="privacy">개인정보처리방침</a> · <a class="link" href="https://github.com/eastflame28-bit/sikbi-julyeora/issues" target="_blank" rel="noopener">문의</a></p>`;
 }
 
 function confirmSheet({ title, body, ok, danger }) {

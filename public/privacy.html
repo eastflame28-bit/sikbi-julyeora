@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>개인정보처리방침 · 식비를 줄여라</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .doc { max-width: 720px; margin: 0 auto; padding: 32px var(--gutter) 64px; }
+    .doc h1 { font-size: 28px; font-weight: 800; margin: 16px 0 4px; }
+    .doc h2 { font-size: 20px; font-weight: 800; margin: 32px 0 10px; }
+    .doc p, .doc li { line-height: 1.75; }
+    .doc ul { padding-left: 22px; margin: 8px 0; }
+    .doc table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 15px; }
+    .doc th, .doc td { text-align: left; vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+    .doc th { color: var(--text-2); font-weight: 700; }
+    .doc a { color: var(--brand); font-weight: 700; }
+    .doc .back { display: inline-flex; gap: 8px; align-items: center; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <main class="doc">
+    <a class="back" href="./">← 식비를 줄여라로 돌아가기</a>
+    <h1>개인정보처리방침</h1>
+    <p class="muted">시행일: 2026년 11월 4일</p>
+
+    <p>「식비를 줄여라」(이하 "서비스")는 냉장고 재료로 만들 수 있는 요리를 찾아 주는 웹앱입니다. 서비스는 꼭 필요한 정보만 받고, 광고나 판매 목적으로 쓰지 않습니다.</p>
+
+    <h2>1. 받는 정보</h2>
+    <table>
+      <thead><tr><th>언제</th><th>무엇을</th><th>어디에 저장</th></tr></thead>
+      <tbody>
+        <tr><td>Google로 로그인할 때</td><td>이름, 이메일 주소, 프로필 사진 주소, 계정 고유 번호</td><td>Supabase (서비스 데이터베이스)</td></tr>
+        <tr><td>로그인하고 앱을 쓸 때</td><td>입력한 재료, 설정(인분, 빼고 싶은 재료, 외식 금액, 화면 테마), 즐겨찾기, "이렇게 했더니 맛있더라" 메모, 요리 완료 기록, 영상에서 정리한 레시피</td><td>Supabase</td></tr>
+        <tr><td>로그인하지 않고 쓸 때</td><td>위와 같은 앱 데이터</td><td>사용자 기기의 브라우저에만 저장 (서비스로 보내지 않음)</td></tr>
+        <tr><td>제미나이 API 키를 연결할 때</td><td>사용자가 넣은 API 키</td><td>사용자 기기의 브라우저에만 저장 (서비스로 보내지 않음)</td></tr>
+      </tbody>
+    </table>
+    <p>서비스는 쿠키를 이용한 광고, 방문 분석 도구를 쓰지 않습니다.</p>
+
+    <h2>2. 쓰는 목적</h2>
+    <ul>
+      <li>로그인하고, 여러 기기에서 같은 데이터를 보여 주기 위해</li>
+      <li>내 재료에 맞는 요리를 찾고, 즐겨찾기·메모·요리 기록을 보관하기 위해</li>
+    </ul>
+
+    <h2>3. 모두의 레시피 창고</h2>
+    <ul>
+      <li>로그인한 사용자가 AI로 새 레시피를 찾으면, <b>레시피 원본(요리 이름, 재료, 조리 순서)</b>이 모든 사용자가 볼 수 있는 공용 창고에 저장됩니다.</li>
+      <li>이때 <b>누가 만들었는지는 저장하지 않습니다.</b> 메모, 재료 목록 같은 개인 데이터는 공유되지 않습니다.</li>
+      <li>"만들었어요"·즐겨찾기를 누르면 레시피별 <b>숫자</b>만 다른 사용자에게 보입니다. 누가 눌렀는지는 보이지 않습니다.</li>
+    </ul>
+
+    <h2>4. 함께 쓰는 외부 서비스</h2>
+    <table>
+      <thead><tr><th>서비스</th><th>하는 일</th></tr></thead>
+      <tbody>
+        <tr><td>Supabase</td><td>데이터베이스와 로그인 처리</td></tr>
+        <tr><td>Google 로그인</td><td>사용자 확인 (비밀번호는 서비스가 받지 않음)</td></tr>
+        <tr><td>Google Gemini API</td><td>사용자가 자기 키를 연결했을 때만, 재료 목록·빼고 싶은 재료·메모·유튜브 영상 주소를 Google로 보내 레시피를 받음. Google의 약관이 적용되며, 무료 키로 보낸 내용은 Google이 서비스 개선에 쓸 수 있음</td></tr>
+        <tr><td>GitHub Pages</td><td>웹사이트 파일 제공 (접속 기록은 GitHub 정책을 따름)</td></tr>
+        <tr><td>YouTube</td><td>"유튜브에서 영상 보기"를 누르면 새 창으로 YouTube가 열림</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. 보관 기간과 지우기</h2>
+    <ul>
+      <li>정보는 사용자가 지우거나 탈퇴를 요청할 때까지 보관합니다.</li>
+      <li>앱의 <b>설정 → 내 데이터 모두 지우기</b>로 재료, 즐겨찾기, 메모, 요리 기록을 바로 지울 수 있습니다.</li>
+      <li><b>설정 → 내 데이터 내려받기</b>로 내 데이터를 파일로 받을 수 있습니다.</li>
+      <li>로그인 계정(이름, 이메일)까지 지우려면 아래 문의처로 "계정 삭제 요청"을 남겨 주세요. 확인 후 지웁니다.</li>
+      <li>공용 창고의 레시피 원본에는 개인정보가 없어서 계정을 지워도 남습니다.</li>
+      <li>제미나이 키는 앱 오른쪽 위 <b>AI 설정 → 연결 끊기</b>로 지울 수 있습니다.</li>
+    </ul>
+
+    <h2>6. 문의</h2>
+    <p>개인정보에 관한 문의와 계정 삭제 요청은 아래 문의 게시판에 남겨 주세요.</p>
+    <p><a href="https://github.com/eastflame28-bit/sikbi-julyeora/issues" target="_blank" rel="noopener">GitHub 문의 게시판 (새 창)</a></p>
+    <p class="muted small">문의 게시판은 누구나 볼 수 있습니다. 이메일 주소나 전화번호 같은 개인정보는 적지 마세요.</p>
+
+    <h2>7. 바뀔 때</h2>
+    <p>이 방침이 바뀌면 이 페이지에 바뀐 날짜와 함께 알립니다.</p>
+  </main>
+</body>
+</html>
