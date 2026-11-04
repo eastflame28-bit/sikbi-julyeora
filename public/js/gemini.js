@@ -174,7 +174,7 @@ const OUTPUT = {
   propertyOrdering: ["status", "message", "recipes"],
 };
 
-async function generate(parts, system) {
+async function generate(parts, system, onStatus = () => {}) {
   let info = current();
   if (!info) throw new GeminiError("먼저 위쪽 'AI 설정'에서 제미나이 키를 연결해 주세요.", "nokey");
   // 예전에 연결해서 대신 쓸 모델 목록이 없으면 한 번 받아 둔다
@@ -189,7 +189,8 @@ async function generate(parts, system) {
   };
   // 모델이 바쁘거나(503) 그 모델의 무료 한도가 찼으면(429) 다음 모델로 바로 넘어간다
   let data, lastErr;
-  for (const model of info.models) {
+  for (const [i, model] of info.models.entries()) {
+    if (i > 0) onStatus(`첫 모델이 바빠서 ${modelLabel(model)}에게 다시 묻는 중이에요…`);
     try { data = await call(`${model}:generateContent`, info.key, body, 50000); break; }
     catch (e) { lastErr = e; if (e.code !== "busy" && e.code !== "quota") throw e; }
   }
@@ -231,7 +232,7 @@ function clean(out, { excluded = [], max = 4 } = {}) {
   return { status: recipes.length ? "ok" : "no_match", message: out?.message || null, recipes };
 }
 
-export async function aiRecipes({ pantry, excluded, servings, notes, avoid }) {
+export async function aiRecipes({ pantry, excluded, servings, notes, avoid, onStatus }) {
   const input = {
     servings,
     excluded_ingredients: excluded,
@@ -240,7 +241,7 @@ export async function aiRecipes({ pantry, excluded, servings, notes, avoid }) {
     avoid_titles: avoid.slice(0, 40),
     request: "가진 재료로 만들 수 있는 서로 다른 한국 가정식 요리 3개를 전체 조리 순서까지 써 줘. 가진 재료만으로 되는 요리를 먼저.",
   };
-  return clean(await generate([{ text: JSON.stringify(input) }], SYSTEM_PROMPT), { excluded, max: 4 });
+  return clean(await generate([{ text: JSON.stringify(input) }], SYSTEM_PROMPT, onStatus), { excluded, max: 4 });
 }
 
 export const isYoutubeUrl = (s) => /^https?:\/\/(www\.|m\.)?(youtube\.com\/(watch\?v=|shorts\/)|youtu\.be\/)[\w-]{6,}/.test(String(s).trim());

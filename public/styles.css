@@ -608,6 +608,18 @@ kbd, .hint {
 .sub-card .how { font-size: 15px; }
 .sub-card .note { font-size: 13px; color: var(--text-2); }
 
+/* ───────── 결과 고르기·더 보기·기다림 ───────── */
+
+.basics.nudge { border-color: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+.warn-text { color: var(--warn); font-weight: 700; font-size: 15px; }
+.chip.strong { border-color: var(--brand); color: var(--brand); font-weight: 700; }
+.cat-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px; margin-top: 28px; }
+.cat-row::-webkit-scrollbar { display: none; }
+.cat-row .chip { flex: none; }
+.more-btn { margin-top: 12px; }
+.ai-wait .elapsed { display: inline-block; min-width: 3.5em; font-variant-numeric: tabular-nums; color: var(--brand); font-weight: 800; }
+.ai-wait p + p { margin-top: 4px; }
+
 /* ───────── 처음 설정 ───────── */
 
 .onb { max-width: 520px; margin: 0 auto; padding-top: 8px; }

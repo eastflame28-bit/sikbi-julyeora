@@ -79,8 +79,8 @@ export async function findRecipes({ pantry, excluded, extra = [] }) {
     a.total_minutes - b.total_minutes);
 
   return {
-    ready: list.filter((r) => r.missing.length === 0).slice(0, 30),
-    almost: list.filter((r) => r.missing.length > 0).slice(0, 20),
+    ready: list.filter((r) => r.missing.length === 0).slice(0, 200),
+    almost: list.filter((r) => r.missing.length > 0).slice(0, 200),
     cloud,
   };
 }

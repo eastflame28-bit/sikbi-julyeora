@@ -26,6 +26,8 @@ const TABS = [
   { id: "settings", label: "설정", icon: "gear" },
 ];
 const KEY_URL = "https://aistudio.google.com/apikey";
+const CATS = ["밥·면", "국·찌개", "반찬", "메인", "전"];
+const COMMON_BASICS = ["소금", "설탕", "식용유", "진간장", "참기름", "다진마늘", "후추", "고춧가루"];
 
 const state = {
   store: null,
@@ -41,6 +43,8 @@ const state = {
   key: { open: false, checking: false, error: null, just: false },
   cache: new Map(),
   myFilter: "all",
+  cat: "all",
+  more: {},
   video: { loading: false, error: null, draft: null, url: "" },
   recipeLoading: null,
 };
@@ -293,12 +297,13 @@ function viewFind() {
     <div class="chips">${suggest.map((n) => `<button class="chip" data-act="add-one" data-v="${n}" data-key="sug-${n}" aria-label="${n} 추가">${icon("plus")}${n}</button>`).join("")}</div>
   </div>` : ""}
 
-  <details class="basics" ${state.basicsOpen ? "open" : ""} data-key="basics">
+  <details class="basics ${basicsOn.length ? "" : "nudge"}" ${(state.basicsOpen ?? !basicsOn.length) ? "open" : ""} data-key="basics">
     <summary data-act="basics-toggle">
-      <span><b>기본 양념</b> <span class="muted">${basicsOn.length ? `${basicsOn.length}개 있음` : "골라 주면 더 정확해요"}</span></span>
+      <span><b>기본 양념</b> ${basicsOn.length ? `<span class="muted">${basicsOn.length}개 있음</span>` : `<span class="warn-text">아직 안 골랐어요 · 고르면 만들 수 있는 요리가 크게 늘어요</span>`}</span>
       ${icon("next", "chev")}
     </summary>
     <div class="chips">
+      ${!basicsOn.length ? `<button class="chip ghost strong" data-act="basics-common" data-key="basics-common">${icon("check")}흔한 양념 한 번에 고르기</button>` : ""}
       ${BASICS.map((n) => `<button class="chip" data-act="toggle-basic" data-v="${n}" data-key="basic-${n}" aria-pressed="${have.has(n)}">${have.has(n) ? icon("check") : ""}${n}</button>`).join("")}
     </div>
   </details>
@@ -321,14 +326,23 @@ function resultsHtml() {
   const res = state.results;
   if (!res) return "";
   const ai = state.ai;
-  const aiList = ai.list.map((r) => annotate(r, pantry()));
-  const none = !res.ready.length && !res.almost.length && !aiList.length;
+  const allAi = ai.list.map((r) => annotate(r, pantry()));
+  const all = [...allAi, ...res.ready, ...res.almost];
+  const cats = CATS.map((c) => [c, all.filter((r) => r.category === c).length]).filter(([, n]) => n);
+  if (state.cat !== "all" && !cats.some(([c]) => c === state.cat)) state.cat = "all";
+  const pick = (l) => (state.cat === "all" ? l : l.filter((r) => r.category === state.cat));
+  const aiList = pick(allAi), ready = pick(res.ready), almost = pick(res.almost);
+  const none = !ready.length && !almost.length && !aiList.length;
 
   return `
     <h2 class="sr-only" id="results-t" tabindex="-1">검색 결과</h2>
-    ${aiList.length ? group("ai-t", "sparkle", "AI가 새로 찾은 요리", aiList) : ""}
-    ${res.ready.length ? group("ready-t", "check", "지금 만들 수 있는 요리", res.ready) : ""}
-    ${res.almost.length ? group("almost-t", "cart", "재료 1~2개만 더 있으면", res.almost) : ""}
+    ${cats.length > 1 ? `<div class="cat-row" role="group" aria-label="요리 종류">
+      <button class="chip" data-act="cat" data-v="all" data-key="cat-all" aria-pressed="${state.cat === "all"}">전체 ${all.length}</button>
+      ${cats.map(([c, n]) => `<button class="chip" data-act="cat" data-v="${c}" data-key="cat-${c}" aria-pressed="${state.cat === c}">${c} ${n}</button>`).join("")}
+    </div>` : ""}
+    ${aiList.length ? group("ai-t", "sparkle", "AI가 새로 찾은 요리", aiList, "ai") : ""}
+    ${ready.length ? group("ready-t", "check", "지금 만들 수 있는 요리", ready, "ready") : ""}
+    ${almost.length ? group("almost-t", "cart", "재료 1~2개만 더 있으면", almost, "almost") : ""}
     ${none ? `<div class="empty">
       <img src="assets/empty-recipes.svg" alt="">
       <h2>맞는 요리를 찾지 못했어요</h2>
@@ -337,10 +351,15 @@ function resultsHtml() {
     ${aiBox()}`;
 }
 
-function group(id, ic, title, list) {
+// 처음에는 몇 개만 보여 주고 '더 보기'로 늘린다
+const FIRST = { ai: 6, ready: 9, almost: 6 };
+function group(id, ic, title, list, key) {
+  const limit = state.more[key] || FIRST[key];
+  const rest = list.length - limit;
   return `<section class="section" aria-labelledby="${id}">
     <h2 class="section-title" id="${id}" tabindex="-1">${icon(ic)} ${title} <span class="count">${list.length}개</span></h2>
-    <div class="recipe-grid">${list.map(cardHtml).join("")}</div>
+    <div class="recipe-grid">${list.slice(0, limit).map(cardHtml).join("")}</div>
+    ${rest > 0 ? `<button class="btn btn-ghost btn-block more-btn" data-act="more" data-v="${key}" data-key="more-${key}">더 보기 (${rest}개 더 있어요)</button>` : ""}
   </section>`;
 }
 
@@ -352,7 +371,13 @@ function aiBox() {
       <button class="btn btn-ghost" data-act="ai-open" data-key="ai-open">${icon("key")} AI 연결하기</button>
     </div>`;
   }
-  if (ai.loading) return `<div class="loading small-loading"><img src="assets/cooking.svg" alt=""><p>AI가 내 재료로 만들 요리를 찾고 있어요… (보통 30초~1분)</p></div>`;
+  if (ai.loading) {
+    const sec = Math.round((Date.now() - ai.startedAt) / 1000);
+    return `<div class="loading small-loading ai-wait"><img src="assets/cooking.svg" alt="">
+      <p><b>AI가 내 재료로 만들 요리를 찾고 있어요</b> <span class="elapsed" id="ai-elapsed">${sec}초</span></p>
+      <p class="muted small" id="ai-status">${esc(ai.status || "레시피 3가지를 조리 순서까지 쓰고 있어요. 보통 30초~1분 걸려요.")}</p>
+    </div>`;
+  }
   return `<div class="ai-box">
     ${ai.error ? `<p class="err" role="alert">${icon("alert")}${esc(ai.error)}</p>` : `<p><b>마음에 드는 요리가 없나요?</b><br><span class="muted">AI가 내 재료를 보고 새 요리 3가지를 찾아 드려요.</span></p>`}
     <button class="btn btn-ghost" data-act="ai-search" data-key="ai-search">${icon("sparkle")} ${ai.error ? "다시 시도" : "AI로 더 찾기"}</button>
@@ -399,6 +424,7 @@ async function runSearch(key) {
     const res = await findRecipes({ pantry: pantry(), excluded: profile().excluded, extra: [...state.cache.values()].filter((r) => r.source === "ai") });
     if (state.resultsKey !== key) return;
     state.results = res;
+    state.more = {};
   } catch (e) {
     console.error(e);
     state.searchError = "인터넷 연결을 확인하고 다시 시도해 주세요.";
@@ -422,10 +448,18 @@ async function runAi() {
   const ai = state.ai;
   ai.loading = true;
   ai.error = null;
+  ai.status = "";
+  ai.startedAt = Date.now();
   updateResults();
+  // 기다리는 동안 몇 초 지났는지 보여 줘서 멈춘 게 아니라는 걸 알린다
+  const tick = setInterval(() => {
+    const el = $("#ai-elapsed");
+    if (el) el.textContent = `${Math.round((Date.now() - ai.startedAt) / 1000)}초`;
+  }, 1000);
   try {
     const shown = [...ai.list, ...(state.results?.ready || []), ...(state.results?.almost || [])].map((r) => r.title);
-    const out = await aiRecipes({ pantry: pantry(), excluded: profile().excluded, servings: profile().servings, notes: myNotes(), avoid: shown });
+    const out = await aiRecipes({ pantry: pantry(), excluded: profile().excluded, servings: profile().servings, notes: myNotes(), avoid: shown,
+      onStatus: (msg) => { ai.status = msg; const el = $("#ai-status"); if (el) el.textContent = msg; } });
     if (out.status !== "ok") { ai.error = out.message || "가진 재료로 만들 만한 새 요리를 찾지 못했어요."; return; }
     const list = out.recipes.map((r) => ({ ...r, id: newId("ai"), source: "ai" }));
     list.forEach(cacheRecipe);
@@ -436,6 +470,7 @@ async function runAi() {
     ai.error = e.message || "AI 추천을 받지 못했어요.";
     if (e.code === "invalid" || e.code === "denied") { disconnectGemini(); renderTopbar(); }
   } finally {
+    clearInterval(tick);
     ai.loading = false;
     updateResults();
     $(ai.error ? '[data-key="ai-search"]' : "#ai-t")?.focus?.();
@@ -995,6 +1030,18 @@ const actions = {
     }, 200);
   },
   "ai-search": () => runAi(),
+  cat: (el) => { state.cat = el.dataset.v; state.more = {}; updateResults(); },
+  more: (el) => {
+    const k = el.dataset.v;
+    state.more[k] = (state.more[k] || FIRST[k]) + 12;
+    updateResults();
+  },
+  "basics-common": () => {
+    const have = new Set(pantry().map((p) => norm(p.name)));
+    const add = COMMON_BASICS.filter((n) => !have.has(n)).map((name) => ({ name }));
+    savePantry([...pantry(), ...add]);
+    toast(`흔한 양념 ${add.length}개를 골랐어요. 없는 건 눌러서 빼 주세요`);
+  },
   back: () => { if (history.length > 1) history.back(); else go("find"); },
   fav: async (el) => {
     const r = findRecipe(el.dataset.v);
