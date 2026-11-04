@@ -7,6 +7,7 @@ import { annotate, findRecipes, markRecipe, newId, shareRecipes } from "./pool.j
 import { aiRecipes, connectGemini, disconnectGemini, geminiInfo, isYoutubeUrl, modelLabel, videoRecipe } from "./gemini.js";
 import { SEED_RECIPES } from "./seed-recipes.js";
 import { config } from "./config.js";
+import { SUBSTITUTES, SUB_CATS, availableOptions } from "./subs.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const main = $("#main");
@@ -87,8 +88,8 @@ function findRecipe(id) {
 // 새로고침해도 방금 받은 레시피(특히 AI 레시피)가 사라지지 않도록 탭이 열려 있는 동안 보관
 const CACHE_KEY = "sikbi:cache2";
 function cacheRecipe(r) {
-  const { have, missing, mainUsed, ...plain } = r;
-  plain.ingredients = r.ingredients.map(({ have: _h, ...i }) => i);
+  const { have, missing, swaps, mainUsed, ...plain } = r;
+  plain.ingredients = r.ingredients.map(({ have: _h, swap: _s, ...i }) => i);
   state.cache.set(r.id, plain);
   try { sessionStorage.setItem(CACHE_KEY, JSON.stringify([...state.cache.values()].slice(-60))); } catch { /* 무시 */ }
 }
@@ -155,11 +156,11 @@ function render({ focusMain = false } = {}) {
   const key = active?.dataset?.key;
 
   const r = state.route;
-  const views = { find: viewFind, recipe: viewRecipe, my: viewMy, settings: viewSettings };
+  const views = { find: viewFind, recipe: viewRecipe, my: viewMy, settings: viewSettings, subs: viewSubs };
   const view = views[r.name] || viewFind;
 
   renderTopbar();
-  renderTabbar(r.name === "recipe" ? (state.lastTab || "find") : r.name);
+  renderTabbar(r.name === "recipe" || r.name === "subs" ? (state.lastTab || "find") : r.name);
   if (TABS.some((t) => t.id === r.name)) state.lastTab = r.name;
 
   main.innerHTML = `<div class="inner">${banners()}${view(r.param)}</div>`;
@@ -302,6 +303,8 @@ function viewFind() {
     </div>
   </details>
 
+  <p class="subs-link"><a class="link" href="#/subs" data-key="to-subs">${icon("leaf")} 재료가 없을 때 대신 쓰는 법</a></p>
+
   <button class="btn btn-primary btn-block btn-lg" data-act="search" data-key="search" ${list.length ? "" : "disabled"}>${icon("search")} 요리 찾기</button>
   ${!list.length ? `<p class="hint-line center">재료를 하나 이상 넣어 주세요</p>` : ""}
 
@@ -372,6 +375,7 @@ function cardHtml(r, idx = 0) {
       <h3>${esc(r.title)}${saved?.favorite ? `<span class="sr-only"> (즐겨찾기)</span>${icon("star", "fav")}` : ""}</h3>
       <span class="meta">${r.total_minutes ? `${r.total_minutes}분 · ` : ""}${DIFF[r.difficulty] || "쉬움"}</span>
       ${r.missing?.length ? `<span class="need">${icon("cart")}${r.missing.map(esc).join(", ")}만 더 필요</span>` : ""}
+      ${r.swaps?.length ? `<span class="swapline">${icon("leaf")}${r.swaps.slice(0, 2).map((w) => `${esc(w.name)} 대신 ${esc(w.use.join("+"))}`).join(", ")}</span>` : ""}
       ${sourceLabel(r)}
     </span>
   </a>`;
@@ -498,15 +502,17 @@ function viewRecipe(id) {
       <section class="card" aria-labelledby="ing-t">
         <h2 class="section-title" id="ing-t">재료 <span class="count">${r.ingredients.filter((x) => x.have).length}/${r.ingredients.length} 있음</span></h2>
         ${r.missing.length ? `<p class="need-line">${icon("cart")}<span><b>${r.missing.map(esc).join(", ")}</b>만 있으면 바로 만들 수 있어요</span></p>` : ""}
+        ${r.swaps.length ? `<p class="swap-line">${icon("leaf")}<span>없는 재료 ${r.swaps.length}개는 <b>집에 있는 재료로 대신</b>할 수 있어요</span></p>` : ""}
         <ul class="ing-list">
-          ${r.ingredients.map((x) => `<li class="${x.have ? "have" : "miss"}">
-            <span class="dot">${x.have ? icon("check") : icon("cart")}</span>
+          ${r.ingredients.map((x) => `<li class="${x.have ? "have" : x.swap ? "swap" : "miss"}">
+            <span class="dot">${x.have ? icon("check") : x.swap ? icon("leaf") : icon("cart")}</span>
             <span class="name">${esc(x.name)}${x.optional ? ` <span class="opt">(없어도 돼요)</span>` : ""}
-              ${!x.have && x.substitute ? `<span class="sub">대신: ${esc(x.substitute)}</span>` : ""}</span>
+              ${x.swap ? `<span class="sub">대신 ${esc(x.swap.use.join(" + "))}: ${esc(x.swap.how)}</span>` : !x.have && x.substitute ? `<span class="sub">대신: ${esc(x.substitute)}</span>` : ""}</span>
             <span class="qty ${x.amount === "확인 필요" ? "check-need" : ""}">${esc(x.amount || "")}</span>
-            <span class="sr-only">${x.have ? "있음" : "없음"}</span>
+            <span class="sr-only">${x.have ? "있음" : x.swap ? "대신 쓸 수 있음" : "없음"}</span>
           </li>`).join("")}
         </ul>
+        <p class="subs-link"><a class="link" href="#/subs" data-key="recipe-subs">${icon("leaf")} 대체 재료 사전 보기</a></p>
       </section>
       ${r.steps?.length ? `<button class="btn btn-primary btn-block btn-lg" data-act="cook" data-v="${esc(r.id)}" data-key="cook">${icon("play")} 요리 시작</button>` : ""}
     </aside>
@@ -569,6 +575,47 @@ async function ensureRecipe(id) {
     if (state.route.name === "recipe" && state.route.param === id) render();
   }
 }
+
+// ───────── 대체 재료 사전 ─────────
+
+function viewSubs() {
+  return `
+  <div class="back-row">
+    <button class="icon-btn" data-act="back" data-key="back" aria-label="뒤로 가기">${icon("back")}</button>
+  </div>
+  <header class="page-head"><div>
+    <h1 class="page-title">대신 쓸 수 있는 재료</h1>
+    <p class="page-sub">재료가 없을 때 집에 있는 것으로 바꾸는 방법과 비율이에요. 내 재료로 가능한 방법에는 <b>집에 있어요</b>가 붙어요.</p>
+  </div></header>
+  <label class="sr-only" for="subs-input">재료 이름으로 찾기</label>
+  <div class="search-wrap">${icon("search")}<input class="input input-lg" id="subs-input" data-key="subs-input" type="search" autocomplete="off" placeholder="예: 맛술, 굴소스, 버터" value="${esc(state.subsQuery || "")}"></div>
+  <div id="subs-list" aria-live="polite">${subsListHtml()}</div>`;
+}
+
+function subsListHtml() {
+  const q = norm(state.subsQuery || "");
+  const names = pantry().map((p) => norm(p.name));
+  const hit = (x) => !q || norm(x.need).includes(q) || x.options.some((op) => op.use.some((u) => norm(u).includes(q)));
+  const groups = SUB_CATS.map((cat) => [cat, SUBSTITUTES.filter((x) => x.cat === cat && hit(x))]).filter(([, l]) => l.length);
+  if (!groups.length) return `<div class="empty"><h2>찾는 재료가 사전에 없어요</h2><p>AI를 연결하면 레시피마다 대체 재료를 함께 알려 드려요.</p></div>`;
+  return groups.map(([cat, list]) => `<section class="section" aria-label="${cat}">
+    <h2 class="section-title">${cat}</h2>
+    <div class="subs-grid">${list.map((x) => `<div class="card sub-card">
+      <h3>${esc(x.need)} <span class="muted">없을 때</span></h3>
+      <ul>${availableOptions(x, names).map((op) => `<li class="${op.ok ? "ok" : ""}">
+        <span class="use">${esc(op.use.join(" + "))}${op.ok ? ` <span class="badge">집에 있어요</span>` : ""}</span>
+        <span class="how">${esc(op.how)}</span>${op.note ? `<span class="note">${esc(op.note)}</span>` : ""}
+      </li>`).join("")}</ul>
+    </div>`).join("")}</div>
+  </section>`).join("");
+}
+
+document.addEventListener("input", (e) => {
+  if (e.target.id !== "subs-input") return;
+  state.subsQuery = e.target.value;
+  const box = $("#subs-list");
+  if (box) box.innerHTML = subsListHtml();
+});
 
 // ───────── 요리 모드 ─────────
 
@@ -1099,7 +1146,7 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.key === "Escape") {
     if (state.key.open) { e.preventDefault(); closeKeyPanel(); }
-    else if (state.route.name === "recipe") { e.preventDefault(); actions.back(); }
+    else if (state.route.name === "recipe" || state.route.name === "subs") { e.preventDefault(); actions.back(); }
   }
 });
 

@@ -586,6 +586,28 @@ kbd, .hint {
   .topbar .brand { visibility: hidden; }
 }
 
+/* ───────── 대체 재료 ───────── */
+
+.rcard .swapline { display: inline-flex; gap: 6px; align-items: center; font-size: 15px; font-weight: 700; color: var(--brand); }
+.rcard .swapline svg { width: 16px; height: 16px; flex: none; }
+.swap-line { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-sm); background: var(--brand-soft); color: var(--brand); font-size: 15px; margin-bottom: 8px; }
+.swap-line svg { width: 18px; height: 18px; flex: none; margin-top: 3px; }
+.ing-list .swap .dot { background: var(--brand-soft); color: var(--brand); }
+.subs-link { margin: 4px 0 20px; }
+.subs-link .link { display: inline-flex; gap: 6px; align-items: center; }
+.subs-link svg { width: 18px; height: 18px; }
+.card .subs-link { margin: 12px 0 0; }
+.subs-grid { display: grid; gap: 12px; }
+@media (min-width: 640px) { .subs-grid { grid-template-columns: repeat(2, 1fr); } }
+.sub-card h3 { font-size: 19px; font-weight: 800; margin-bottom: 8px; }
+.sub-card h3 .muted { font-size: 14px; font-weight: 500; }
+.sub-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sub-card li { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-2); }
+.sub-card li.ok { background: var(--brand-soft); }
+.sub-card .use { font-weight: 700; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.sub-card .how { font-size: 15px; }
+.sub-card .note { font-size: 13px; color: var(--text-2); }
+
 /* ───────── 처음 설정 ───────── */
 
 .onb { max-width: 520px; margin: 0 auto; padding-top: 8px; }

@@ -4,15 +4,21 @@
 import { SEED_RECIPES } from "./seed-recipes.js";
 import { BASICS, expandNames, hasIngredient, norm } from "./catalog.js";
 import { supabase, uid } from "./store.js";
+import { findSwap } from "./subs.js";
 
-// 레시피 재료마다 '있음/없음'을 표시하고 부족한 필수 재료를 계산한다.
+// 레시피 재료마다 '있음 / 대신 쓸 수 있음 / 없음'을 표시하고 부족한 필수 재료를 계산한다.
 // (AI가 보낸 값도 그대로 믿지 않고 내 재료 목록과 다시 맞춰 본다)
 export function annotate(recipe, pantry) {
   const names = pantry.map((p) => norm(p.name));
-  const ingredients = recipe.ingredients.map((ing) => ({ ...ing, have: hasIngredient(names, ing.name) }));
-  const missing = ingredients.filter((x) => !x.optional && !x.have).map((x) => x.name);
+  const ingredients = recipe.ingredients.map((ing) => {
+    const have = hasIngredient(names, ing.name);
+    return { ...ing, have, swap: have ? null : findSwap(ing.name, names) };
+  });
+  const lacking = ingredients.filter((x) => !x.optional && !x.have);
+  const missing = lacking.filter((x) => !x.swap).map((x) => x.name);
+  const swaps = lacking.filter((x) => x.swap).map((x) => ({ name: x.name, use: x.swap.use }));
   const mainUsed = ingredients.filter((x) => x.have && !BASICS.includes(norm(x.name))).length;
-  return { ...recipe, ingredients, missing, mainUsed };
+  return { ...recipe, ingredients, missing, swaps, mainUsed };
 }
 
 export const isBlocked = (recipe, excluded) => {
@@ -67,6 +73,7 @@ export async function findRecipes({ pantry, excluded, extra = [] }) {
 
   list.sort((a, b) =>
     a.missing.length - b.missing.length ||
+    a.swaps.length - b.swaps.length ||
     (b.stats.cooks * 2 + b.stats.favs) - (a.stats.cooks * 2 + a.stats.favs) ||
     b.mainUsed - a.mainUsed ||
     a.total_minutes - b.total_minutes);
