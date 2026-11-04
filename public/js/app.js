@@ -68,7 +68,7 @@ function applyTheme(theme) {
   else delete root.dataset.theme;
   // 휴대폰 위쪽 상태 표시줄 색도 화면에 맞춘다
   const dark = theme === "dark" || (theme !== "light" && darkQuery.matches);
-  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.content = dark ? "#0B0B0D" : "#EDEDF0"; });
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.content = dark ? "#0B0B0D" : "#FFFFFF"; });
 }
 
 const isDark = () => {

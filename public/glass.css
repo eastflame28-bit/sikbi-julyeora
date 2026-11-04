@@ -1,48 +1,48 @@
-/* 식비를 줄여라 — Liquid Glass 테마 (모노 실버)
+/* 식비를 줄여라 — Liquid Glass 테마 (밝은 화면은 화이트, 어두운 화면은 모노 실버)
    styles.css 위에 덮어 씌우는 층. 이 파일을 빼면 이전 디자인으로 돌아간다.
    - 색: 흰색·회색 유리에 거의 검정 버튼 (다크 모드에서는 반대로 은빛 버튼)
    - 패널: 반투명 + 뒤 배경 흐림(backdrop-filter) + 위쪽 빛 반사 + 얇은 유리 테두리
    - '투명도 줄이기'를 켠 사용자에게는 불투명한 면으로 바꾼다 */
 
 :root {
-  --bg: #F7F8FA;
+  --bg: #FFFFFF;
   --text: #1C1C1E;
   --text-2: #5C5C63;
   --brand: #1C1C1E;
   --on-brand: #FFFFFF;
   --accent: #8E8E93;
 
-  /* 맑은 유리: 많이 비치고, 테두리와 빛 반사는 또렷하게 */
-  --glass: rgba(255, 255, 255, .38);
-  --glass-strong: rgba(255, 255, 255, .64);
-  --glass-soft: rgba(255, 255, 255, .22);
-  --glass-edge: rgba(255, 255, 255, .96);
-  --glass-line: rgba(0, 0, 0, .05);
-  --glass-hi: inset 0 1px 0 #FFFFFF, inset 0 -1px 0 rgba(255, 255, 255, .5), inset 0 0 0 .5px rgba(255, 255, 255, .6);
-  --glass-shadow: 0 8px 28px rgba(40, 50, 70, .06), 0 1px 3px rgba(40, 50, 70, .04);
-  --glass-shadow-lg: 0 20px 50px rgba(40, 50, 70, .10), 0 3px 10px rgba(40, 50, 70, .05);
-  --glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, .75) 0%, rgba(255, 255, 255, .18) 35%, rgba(255, 255, 255, 0) 58%, rgba(255, 255, 255, .28) 100%);
-  --hi-grad: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .7));
-  --thumb-grad: linear-gradient(145deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .55));
+  /* 흰 화면 위 흰 패널: 아주 옅은 테두리와 그림자로 구분 */
+  --glass: rgba(255, 255, 255, .82);
+  --glass-strong: rgba(255, 255, 255, .96);
+  --glass-soft: rgba(0, 0, 0, .025);
+  --glass-edge: rgba(0, 0, 0, .07);
+  --glass-line: rgba(0, 0, 0, .06);
+  --glass-hi: inset 0 1px 0 #FFFFFF;
+  --glass-shadow: 0 6px 20px rgba(0, 0, 0, .05), 0 1px 2px rgba(0, 0, 0, .04);
+  --glass-shadow-lg: 0 16px 40px rgba(0, 0, 0, .08), 0 2px 6px rgba(0, 0, 0, .04);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, .6), rgba(255, 255, 255, 0) 40%);
+  --hi-grad: linear-gradient(180deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0));
+  --thumb-grad: linear-gradient(145deg, #FFFFFF, #F4F4F6);
   --blur: blur(24px) saturate(180%);
   --blur-strong: blur(36px) saturate(200%);
 
   /* 진한 버튼 대신 맑은 흰 유리 버튼 (선택된 칩, 단계 번호도 같은 모양) */
-  --solid: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .74));
+  --solid: linear-gradient(180deg, #FFFFFF, #F7F7F8);
   --solid-text: #1C1C1E;
   --solid-edge: rgba(0, 0, 0, .26);
-  --solid-shadow: inset 0 1px 0 #FFFFFF, inset 0 -1px 0 rgba(0, 0, 0, .04), 0 8px 22px rgba(40, 50, 70, .13);
+  --solid-shadow: inset 0 1px 0 #FFFFFF, 0 6px 16px rgba(0, 0, 0, .10);
   --progress: linear-gradient(90deg, #AEAEB2, #3A3A3C);
 
   /* 절약 카드 */
-  --sav-bg: radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, .9), transparent 50%), linear-gradient(150deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .35));
+  --sav-bg: linear-gradient(180deg, #FFFFFF, #FAFAFB);
   --sav-text: #1C1C1E;
-  --sav-edge: rgba(255, 255, 255, .96);
+  --sav-edge: rgba(0, 0, 0, .07);
 
   --surface: var(--glass-strong);
-  --surface-2: rgba(255, 255, 255, .4);
+  --surface-2: rgba(0, 0, 0, .03);
   --line: rgba(0, 0, 0, .08);
-  --brand-soft: rgba(0, 0, 0, .045);
+  --brand-soft: rgba(0, 0, 0, .05);
   --accent-soft: rgba(0, 0, 0, .035);
   --warn-soft: rgba(255, 220, 150, .42);
   --danger-soft: rgba(255, 210, 205, .6);
@@ -52,11 +52,11 @@
   --r-md: 22px;
   --r-lg: 30px;
 
-  /* 배경 빛: 진주처럼 아주 옅은 무지갯빛 */
-  --orb-1: rgba(255, 255, 255, 1);
-  --orb-2: rgba(214, 226, 255, .55);
-  --orb-3: rgba(255, 230, 242, .45);
-  --orb-4: rgba(222, 246, 240, .5);
+  /* 밝은 화면은 순수한 흰색: 배경 빛 없음 */
+  --orb-1: transparent;
+  --orb-2: transparent;
+  --orb-3: transparent;
+  --orb-4: transparent;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -351,7 +351,7 @@ body::before {
 }
 
 /* 밝은 화면에서는 그림도 한 톤 밝게 */
-:root:not([data-theme="dark"]) .empty img, :root:not([data-theme="dark"]) .loading img, :root:not([data-theme="dark"]) .onb .hero { filter: brightness(1.12) contrast(.92); }
+:root:not([data-theme="dark"]) .empty img, :root:not([data-theme="dark"]) .loading img, :root:not([data-theme="dark"]) .onb .hero { filter: brightness(1.08) contrast(.95); }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .empty img, :root:not([data-theme="light"]) .loading img { filter: none; }
 }
