@@ -14,5 +14,9 @@ export const config = {
   //   anonKey: "eyJhbGciOi...",
   // },
 
+  // 레시피 화면의 '조회 수 많은 영상 2개'에 쓰는 YouTube Data API 키.
+  // Google Cloud에서 이 웹사이트 주소로만 쓰도록 제한한 키라 공개돼도 됩니다. 비워 두면 유튜브 검색 바로가기만 보여요.
+  youtubeApiKey: null,
+
   supabaseSdk: "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm",
 };

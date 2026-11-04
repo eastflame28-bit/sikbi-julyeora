@@ -8,6 +8,7 @@ import { aiRecipes, connectGemini, disconnectGemini, geminiInfo, isYoutubeUrl, m
 import { SEED_RECIPES } from "./seed-recipes.js";
 import { config } from "./config.js";
 import { SUBSTITUTES, SUB_CATS, availableOptions } from "./subs.js";
+import { formatViews, topVideos, youtubeEnabled } from "./youtube.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const main = $("#main");
@@ -192,7 +193,7 @@ function render({ focusMain = false } = {}) {
 
   main.innerHTML = `<div class="inner">${banners()}${view(r.param)}</div>`;
   if (r.name === "find") ensureResults();
-  if (r.name === "recipe") ensureRecipe(r.param);
+  if (r.name === "recipe") { ensureRecipe(r.param); ensureVideos(); }
 
   if (key) {
     const again = document.querySelector(`[data-key="${CSS.escape(key)}"]`);
@@ -582,8 +583,12 @@ function viewRecipe(id) {
       <h2 class="section-title" id="steps-t">만드는 순서 <span class="count">${r.steps.length}단계</span></h2>
       <ol class="steps">${r.steps.map(stepHtml).join("")}</ol>
 
+      ${!r.videoUrl && youtubeEnabled() ? `<section class="yt-section" aria-labelledby="yt-t">
+        <h2 class="section-title" id="yt-t">${icon("video")} 많이 본 영상</h2>
+        <div id="yt-box" data-dish="${esc(r.title)}">${videosHtml(r.title)}</div>
+      </section>` : ""}
       <div class="link-row">
-        <a class="btn btn-ghost" href="${r.videoUrl ? esc(r.videoUrl) : yt}" target="_blank" rel="noopener" data-key="yt">${icon("video")} ${r.videoUrl ? "원본 영상 보기" : "유튜브에서 영상 보기"} <span class="sr-only">(새 창)</span></a>
+        <a class="btn btn-ghost" href="${r.videoUrl ? esc(r.videoUrl) : yt}" target="_blank" rel="noopener" data-key="yt">${icon("video")} ${r.videoUrl ? "원본 영상 보기" : youtubeEnabled() ? "유튜브에서 더 찾아보기" : "유튜브에서 영상 보기"} <span class="sr-only">(새 창)</span></a>
       </div>
 
       <section class="card note-card" aria-labelledby="note-t">
@@ -615,6 +620,37 @@ function stepHtml(s, i) {
       ${s.tip ? `<div class="tip">${icon("bulb")}<span>${esc(s.tip)}</span></div>` : ""}
     </div>
   </li>`;
+}
+
+// ───────── 많이 본 영상 ─────────
+
+const videos = new Map(); // 요리 이름 → { loading, items, error }
+
+function videosHtml(dish) {
+  const v = videos.get(dish);
+  if (!v || v.loading) return `<div class="yt-grid">${'<div class="yt-card skeleton"></div>'.repeat(2)}</div>`;
+  if (v.error || !v.items.length) return `<p class="muted small">${v.error ? "영상을 불러오지 못했어요. 아래 버튼으로 유튜브에서 찾아보세요." : "관련 영상을 찾지 못했어요."}</p>`;
+  return `<div class="yt-grid">${v.items.map((x, i) => `<a class="yt-card" href="https://www.youtube.com/watch?v=${encodeURIComponent(x.id)}" target="_blank" rel="noopener" data-key="ytv-${i}">
+      <span class="yt-thumb"><img src="${esc(x.thumb)}" alt="" loading="lazy">${i === 0 ? `<span class="yt-rank">조회 수 1위</span>` : ""}</span>
+      <span class="yt-title">${esc(x.title)}</span>
+      <span class="yt-meta">${esc(x.channel)} · 조회수 ${formatViews(x.views)}</span>
+      <span class="sr-only">(새 창)</span>
+    </a>`).join("")}</div>`;
+}
+
+async function ensureVideos() {
+  const box = $("#yt-box");
+  const dish = box?.dataset.dish;
+  if (!dish || videos.has(dish)) return;
+  videos.set(dish, { loading: true, items: [] });
+  try {
+    videos.set(dish, { items: await topVideos(dish) });
+  } catch (e) {
+    console.warn("유튜브 영상을 불러오지 못함", e);
+    videos.set(dish, { items: [], error: true });
+  }
+  const now = $("#yt-box");
+  if (now && now.dataset.dish === dish) now.innerHTML = videosHtml(dish);
 }
 
 // 공용 창고의 레시피를 새로고침 뒤 바로 열었을 때 Supabase에서 한 번 더 찾아본다

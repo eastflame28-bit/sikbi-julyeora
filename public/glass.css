@@ -166,7 +166,7 @@ body::before {
   backdrop-filter: var(--blur);
 }
 
-.card, .rcard, .settings-card, .basics, .stat {
+.card, .rcard, .settings-card, .basics, .stat, .yt-card {
   background: var(--glass-sheen), var(--glass);
   border: 1px solid var(--glass-edge);
   box-shadow: var(--glass-hi), var(--glass-shadow);
