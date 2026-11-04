@@ -1,108 +1,143 @@
-/* 식비를 줄여라 — Liquid Glass 테마
+/* 식비를 줄여라 — Liquid Glass 테마 (모노 실버)
    styles.css 위에 덮어 씌우는 층. 이 파일을 빼면 이전 디자인으로 돌아간다.
-   - 뒤쪽 배경: 브랜드 그린·피치·민트 빛 번짐
+   - 색: 흰색·회색 유리에 거의 검정 버튼 (다크 모드에서는 반대로 은빛 버튼)
    - 패널: 반투명 + 뒤 배경 흐림(backdrop-filter) + 위쪽 빛 반사 + 얇은 유리 테두리
    - '투명도 줄이기'를 켠 사용자에게는 불투명한 면으로 바꾼다 */
 
 :root {
-  --bg: #EEF3EE;
-  --glass: rgba(255, 255, 255, .52);
-  --glass-strong: rgba(255, 255, 255, .74);
-  --glass-soft: rgba(255, 255, 255, .34);
-  --glass-edge: rgba(255, 255, 255, .78);
-  --glass-line: rgba(30, 60, 42, .10);
-  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(255, 255, 255, .25);
-  --glass-shadow: 0 10px 30px rgba(24, 52, 36, .10), 0 2px 6px rgba(24, 52, 36, .05);
-  --glass-shadow-lg: 0 24px 60px rgba(24, 52, 36, .18), 0 4px 12px rgba(24, 52, 36, .08);
-  --glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, .55) 0%, rgba(255, 255, 255, .12) 38%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, .18) 100%);
-  --blur: blur(22px) saturate(170%);
-  --blur-strong: blur(32px) saturate(190%);
+  --bg: #EDEDF0;
+  --text: #1C1C1E;
+  --text-2: #5C5C63;
+  --brand: #1C1C1E;
+  --on-brand: #FFFFFF;
+  --accent: #8E8E93;
+
+  --glass: rgba(255, 255, 255, .55);
+  --glass-strong: rgba(255, 255, 255, .78);
+  --glass-soft: rgba(255, 255, 255, .36);
+  --glass-edge: rgba(255, 255, 255, .85);
+  --glass-line: rgba(0, 0, 0, .07);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(255, 255, 255, .3);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, .07), 0 2px 6px rgba(0, 0, 0, .04);
+  --glass-shadow-lg: 0 24px 60px rgba(0, 0, 0, .14), 0 4px 12px rgba(0, 0, 0, .06);
+  --glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, .6) 0%, rgba(255, 255, 255, .14) 38%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, .2) 100%);
+  --hi-grad: linear-gradient(180deg, rgba(255, 255, 255, .8), rgba(255, 255, 255, .3));
+  --thumb-grad: linear-gradient(145deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .45));
+  --blur: blur(22px) saturate(160%);
+  --blur-strong: blur(32px) saturate(180%);
+
+  /* 진한 버튼 (선택된 칩, 단계 번호, 진행 막대도 같은 색) */
+  --solid: linear-gradient(180deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, 0) 55%), linear-gradient(160deg, #48484C, #1C1C1E);
+  --solid-text: #FFFFFF;
+  --solid-edge: rgba(255, 255, 255, .22);
+  --solid-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 -2px 6px rgba(0, 0, 0, .2), 0 10px 24px rgba(0, 0, 0, .22);
+
   --surface: var(--glass-strong);
-  --surface-2: rgba(255, 255, 255, .42);
-  --line: rgba(30, 60, 42, .12);
-  --brand-soft: rgba(36, 99, 72, .12);
-  --accent-soft: rgba(220, 167, 122, .22);
-  --warn-soft: rgba(251, 225, 170, .55);
-  --danger-soft: rgba(251, 214, 210, .7);
+  --surface-2: rgba(255, 255, 255, .45);
+  --line: rgba(0, 0, 0, .10);
+  --brand-soft: rgba(0, 0, 0, .06);
+  --accent-soft: rgba(0, 0, 0, .05);
+  --warn-soft: rgba(255, 214, 140, .45);
+  --danger-soft: rgba(255, 205, 200, .65);
   --shadow: var(--glass-shadow);
   --shadow-lg: var(--glass-shadow-lg);
   --r-sm: 14px;
   --r-md: 22px;
   --r-lg: 30px;
-  --hi-grad: linear-gradient(180deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .25));
-  --thumb-grad: linear-gradient(145deg, rgba(255, 255, 255, .85), rgba(255, 255, 255, .25));
-  --orb-1: rgba(64, 160, 112, .55);
-  --orb-2: rgba(240, 170, 110, .55);
-  --orb-3: rgba(120, 195, 225, .48);
-  --orb-4: rgba(180, 225, 150, .55);
+
+  /* 배경 빛: 아주 연한 은빛 */
+  --orb-1: rgba(255, 255, 255, .95);
+  --orb-2: rgba(200, 204, 214, .75);
+  --orb-3: rgba(222, 224, 230, .9);
+  --orb-4: rgba(180, 184, 194, .55);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0E1411;
-    --glass: rgba(34, 44, 38, .48);
-    --glass-strong: rgba(36, 47, 40, .70);
+    --bg: #0B0B0D;
+    --text: #F2F2F7;
+    --text-2: #A1A1A8;
+    --brand: #F2F2F7;
+    --on-brand: #1C1C1E;
+    --accent: #AEAEB2;
+    --glass: rgba(44, 44, 48, .5);
+    --glass-strong: rgba(48, 48, 52, .72);
     --glass-soft: rgba(255, 255, 255, .05);
     --glass-edge: rgba(255, 255, 255, .14);
     --glass-line: rgba(255, 255, 255, .08);
     --glass-hi: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 -1px 0 rgba(255, 255, 255, .03);
-    --glass-shadow: 0 10px 30px rgba(0, 0, 0, .35);
-    --glass-shadow-lg: 0 24px 60px rgba(0, 0, 0, .55);
+    --glass-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+    --glass-shadow-lg: 0 24px 60px rgba(0, 0, 0, .6);
     --glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .02) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, .05) 100%);
+    --hi-grad: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .04));
+    --thumb-grad: linear-gradient(145deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04));
+    --solid: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 60%), linear-gradient(160deg, #F5F5F7, #C7C7CC);
+    --solid-text: #1C1C1E;
+    --solid-edge: rgba(255, 255, 255, .5);
+    --solid-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -2px 6px rgba(0, 0, 0, .12), 0 10px 24px rgba(0, 0, 0, .45);
     --surface: var(--glass-strong);
     --surface-2: rgba(255, 255, 255, .06);
     --line: rgba(255, 255, 255, .10);
-    --brand-soft: rgba(154, 216, 174, .14);
-    --accent-soft: rgba(220, 167, 122, .16);
+    --brand-soft: rgba(255, 255, 255, .08);
+    --accent-soft: rgba(255, 255, 255, .06);
     --warn-soft: rgba(241, 195, 109, .14);
     --danger-soft: rgba(255, 170, 162, .14);
-    --hi-grad: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .03));
-    --thumb-grad: linear-gradient(145deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .03));
-    --hi-grad: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .03));
-  --thumb-grad: linear-gradient(145deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .03));
-  --orb-1: rgba(40, 130, 88, .40);
-    --orb-2: rgba(170, 110, 70, .30);
-    --orb-3: rgba(50, 110, 140, .30);
-    --orb-4: rgba(80, 140, 70, .26);
+    --orb-1: rgba(120, 120, 130, .30);
+    --orb-2: rgba(70, 72, 80, .40);
+    --orb-3: rgba(100, 102, 112, .28);
+    --orb-4: rgba(60, 60, 66, .40);
+    color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #0E1411;
-  --glass: rgba(34, 44, 38, .48);
-  --glass-strong: rgba(36, 47, 40, .70);
+  --bg: #0B0B0D;
+  --text: #F2F2F7;
+  --text-2: #A1A1A8;
+  --brand: #F2F2F7;
+  --on-brand: #1C1C1E;
+  --accent: #AEAEB2;
+  --glass: rgba(44, 44, 48, .5);
+  --glass-strong: rgba(48, 48, 52, .72);
   --glass-soft: rgba(255, 255, 255, .05);
   --glass-edge: rgba(255, 255, 255, .14);
   --glass-line: rgba(255, 255, 255, .08);
   --glass-hi: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 -1px 0 rgba(255, 255, 255, .03);
-  --glass-shadow: 0 10px 30px rgba(0, 0, 0, .35);
-  --glass-shadow-lg: 0 24px 60px rgba(0, 0, 0, .55);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+  --glass-shadow-lg: 0 24px 60px rgba(0, 0, 0, .6);
   --glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .02) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, .05) 100%);
+  --hi-grad: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .04));
+  --thumb-grad: linear-gradient(145deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04));
+  --solid: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 60%), linear-gradient(160deg, #F5F5F7, #C7C7CC);
+  --solid-text: #1C1C1E;
+  --solid-edge: rgba(255, 255, 255, .5);
+  --solid-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -2px 6px rgba(0, 0, 0, .12), 0 10px 24px rgba(0, 0, 0, .45);
   --surface: var(--glass-strong);
   --surface-2: rgba(255, 255, 255, .06);
   --line: rgba(255, 255, 255, .10);
-  --brand-soft: rgba(154, 216, 174, .14);
-  --accent-soft: rgba(220, 167, 122, .16);
+  --brand-soft: rgba(255, 255, 255, .08);
+  --accent-soft: rgba(255, 255, 255, .06);
   --warn-soft: rgba(241, 195, 109, .14);
   --danger-soft: rgba(255, 170, 162, .14);
-  --orb-1: rgba(40, 130, 88, .40);
-  --orb-2: rgba(170, 110, 70, .30);
-  --orb-3: rgba(50, 110, 140, .30);
-  --orb-4: rgba(80, 140, 70, .26);
+  --orb-1: rgba(120, 120, 130, .30);
+  --orb-2: rgba(70, 72, 80, .40);
+  --orb-3: rgba(100, 102, 112, .28);
+  --orb-4: rgba(60, 60, 66, .40);
+  color-scheme: dark;
 }
 
-/* ───────── 배경: 빛이 번진 유리 뒤 풍경 ───────── */
+/* ───────── 배경: 은빛 빛 번짐 ───────── */
 
-body { background: var(--bg); }
+body { background: var(--bg); transition: background .3s var(--ease); }
 body::before {
   content: ""; position: fixed; inset: -20vmax; z-index: -1; pointer-events: none;
   background:
-    radial-gradient(38vmax 38vmax at 12% 8%, var(--orb-1), transparent 62%),
-    radial-gradient(34vmax 34vmax at 92% 18%, var(--orb-2), transparent 60%),
+    radial-gradient(38vmax 38vmax at 12% 6%, var(--orb-1), transparent 62%),
+    radial-gradient(34vmax 34vmax at 92% 20%, var(--orb-2), transparent 60%),
     radial-gradient(40vmax 40vmax at 78% 92%, var(--orb-3), transparent 62%),
-    radial-gradient(30vmax 30vmax at 8% 82%, var(--orb-4), transparent 60%);
+    radial-gradient(30vmax 30vmax at 6% 84%, var(--orb-4), transparent 60%);
   filter: blur(8px);
-  animation: drift 28s ease-in-out infinite alternate;
+  animation: drift 30s ease-in-out infinite alternate;
 }
 @keyframes drift {
   to { transform: translate3d(2vmax, -1.5vmax, 0) rotate(4deg) scale(1.04); }
@@ -110,7 +145,7 @@ body::before {
 
 /* ───────── 유리 패널 공통 ───────── */
 
-.card, .rcard, .settings-card, .basics, .stat, .sub-card, .video-card, .ai-panel-inner,
+.card, .rcard, .settings-card, .basics, .stat, .sub-card, .video-card,
 .btn-ghost, .icon-btn, .chip, .seg, .input, .textarea, .ai-pill, .stepper button {
   -webkit-backdrop-filter: var(--blur);
   backdrop-filter: var(--blur);
@@ -125,12 +160,12 @@ body::before {
 .stat { border-radius: var(--r-sm); }
 .setting { border-bottom-color: var(--glass-line); }
 
-.rcard { transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s; }
+.rcard { transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
 .rcard:hover { transform: translateY(-3px); border-color: var(--glass-edge); box-shadow: var(--glass-hi), var(--glass-shadow-lg); }
 .rcard .thumb, .recipe-hero .thumb {
   background: var(--thumb-grad), var(--accent-soft);
   border: 1px solid var(--glass-edge);
-  box-shadow: var(--glass-hi), 0 6px 16px rgba(180, 120, 70, .16);
+  box-shadow: var(--glass-hi), 0 6px 16px rgba(0, 0, 0, .08);
 }
 
 /* ───────── 위쪽 바, 메뉴: 떠 있는 유리 ───────── */
@@ -140,8 +175,10 @@ body::before {
   -webkit-backdrop-filter: var(--blur-strong);
   backdrop-filter: var(--blur-strong);
   border-bottom: 1px solid var(--glass-edge);
-  box-shadow: 0 1px 0 var(--glass-line), 0 8px 24px rgba(24, 52, 36, .05);
+  box-shadow: 0 1px 0 var(--glass-line), 0 8px 24px rgba(0, 0, 0, .04);
 }
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+.theme-btn { width: 44px; height: 44px; }
 
 .tabbar {
   inset: auto 12px calc(10px + env(safe-area-inset-bottom)) 12px;
@@ -154,10 +191,7 @@ body::before {
   box-shadow: var(--glass-hi), var(--glass-shadow-lg);
 }
 .tab { border-radius: 999px; transition: background .2s var(--ease), color .2s; }
-.tab[aria-current="page"] {
-  background: var(--hi-grad), var(--brand-soft);
-  box-shadow: var(--glass-hi), 0 4px 12px rgba(36, 99, 72, .12);
-}
+.tab[aria-current="page"] { background: var(--hi-grad), var(--brand-soft); box-shadow: var(--glass-hi), 0 4px 12px rgba(0, 0, 0, .08); }
 .screen { padding-bottom: calc(var(--tabbar-h) + 48px + env(safe-area-inset-bottom)); }
 .toast { bottom: calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom)); }
 
@@ -174,60 +208,56 @@ body::before {
   .toast { bottom: 32px; left: calc(50% + 122px); }
 }
 
-/* ───────── 버튼: 유리와 빛나는 초록 ───────── */
+/* ───────── 버튼 ───────── */
 
-.btn-primary {
-  background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 55%), linear-gradient(160deg, #2E8060, #1D5640);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, .28);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), inset 0 -2px 6px rgba(0, 0, 0, .12), 0 10px 24px rgba(36, 99, 72, .32);
+.btn-primary, .chip[aria-pressed="true"], .chip.on, .step .no {
+  background: var(--solid);
+  color: var(--solid-text);
+  border: 1px solid var(--solid-edge);
+  box-shadow: var(--solid-shadow);
 }
-.btn-primary:hover { filter: brightness(1.07) saturate(1.05); }
+.btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost, .icon-btn {
   background: var(--glass-sheen), var(--glass);
   border: 1px solid var(--glass-edge);
-  box-shadow: var(--glass-hi), 0 4px 14px rgba(24, 52, 36, .06);
+  box-shadow: var(--glass-hi), 0 4px 14px rgba(0, 0, 0, .05);
 }
 .btn-ghost:hover, .icon-btn:hover { background: var(--glass-sheen), var(--glass-strong); }
-.icon-btn.on { background: var(--hi-grad), var(--accent-soft); border-color: var(--accent); }
+.icon-btn.on { background: var(--hi-grad), var(--accent-soft); border-color: rgba(214, 162, 60, .55); color: #C9962E; }
 .btn-danger { background: var(--danger-soft); border: 1px solid rgba(180, 56, 53, .18); }
 .btn-lg { border-radius: 999px; }
 
 .ai-pill {
   background: var(--glass-sheen), var(--glass);
   border: 1px solid var(--glass-edge);
-  box-shadow: var(--glass-hi), 0 4px 14px rgba(24, 52, 36, .08);
+  box-shadow: var(--glass-hi), 0 4px 14px rgba(0, 0, 0, .06);
 }
-.ai-pill.on { background: var(--hi-grad), var(--brand-soft); border-color: rgba(36, 99, 72, .35); }
+.ai-pill.on { background: var(--hi-grad), var(--brand-soft); color: var(--text); }
+.ai-pill.on .dot { background: #34C759; }
 
 /* ───────── 칩, 입력칸, 나눔 버튼 ───────── */
 
 .chip {
   background: var(--glass-sheen), var(--glass);
   border: 1px solid var(--glass-edge);
-  box-shadow: var(--glass-hi), 0 2px 8px rgba(24, 52, 36, .05);
+  box-shadow: var(--glass-hi), 0 2px 8px rgba(0, 0, 0, .04);
 }
-.chip:hover { border-color: rgba(36, 99, 72, .4); }
-.chip[aria-pressed="true"], .chip.on {
-  background: linear-gradient(180deg, rgba(255, 255, 255, .25), rgba(255, 255, 255, 0) 60%), linear-gradient(160deg, #2E8060, #1D5640);
-  border-color: rgba(255, 255, 255, .3);
-  color: #fff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 6px 14px rgba(36, 99, 72, .25);
-}
+.chip:hover { border-color: var(--accent); }
 .chip.ghost { background: var(--glass-soft); }
+.chip.strong { border-color: var(--brand); color: var(--brand); }
 
 .input, .textarea {
   background: var(--glass-strong);
   border: 1px solid var(--glass-edge);
-  box-shadow: inset 0 2px 6px rgba(24, 52, 36, .06), 0 1px 0 rgba(255, 255, 255, .6);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .05), 0 1px 0 rgba(255, 255, 255, .5);
   border-radius: var(--r-sm);
 }
-.input:focus, .textarea:focus { border-color: rgba(36, 99, 72, .55); box-shadow: inset 0 2px 6px rgba(24, 52, 36, .05), 0 0 0 4px rgba(36, 99, 72, .16); }
+.input:focus, .textarea:focus { border-color: var(--accent); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .04), 0 0 0 4px var(--brand-soft); }
 .input-lg { border-radius: 18px; }
 
-.seg { background: var(--glass-soft); border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 3px rgba(24, 52, 36, .08); border-radius: 18px; }
+.seg { background: var(--glass-soft); border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .06); border-radius: 18px; }
 .seg button { border-radius: 14px; }
-.seg button[aria-pressed="true"] { background: var(--glass-sheen), var(--glass-strong); box-shadow: var(--glass-hi), 0 4px 12px rgba(24, 52, 36, .10); }
+.seg button[aria-pressed="true"] { background: var(--glass-sheen), var(--glass-strong); box-shadow: var(--glass-hi), 0 4px 12px rgba(0, 0, 0, .08); }
 
 .stepper button { background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-hi); }
 
@@ -237,41 +267,39 @@ body::before {
   border: 1px solid var(--glass-edge);
   box-shadow: var(--glass-hi);
 }
-.step .no {
-  background: linear-gradient(180deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, 0) 60%), linear-gradient(160deg, #2E8060, #1D5640);
-  color: #fff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 4px 10px rgba(36, 99, 72, .28);
-}
+.banner.info, .swap-line, .step .done-when, .cook-main .done-when { background: var(--glass-soft); color: var(--text); }
+.step .tip, .cook-main .tip { background: var(--accent-soft); }
 .ing-list li { border-bottom-color: var(--glass-line); }
+.ing-list .have .dot, .ing-list .swap .dot { background: var(--brand-soft); color: var(--text); }
 .sub-card li { background: var(--glass-soft); border: 1px solid var(--glass-edge); }
 .sub-card li.ok { background: var(--hi-grad), var(--brand-soft); }
 .ai-box { border: 1px solid var(--glass-edge); background: var(--glass-soft); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
-.basics.nudge { border-color: rgba(133, 85, 0, .45); box-shadow: var(--glass-hi), 0 0 0 4px var(--warn-soft); }
+.basics.nudge { border-color: rgba(176, 116, 0, .5); box-shadow: var(--glass-hi), 0 0 0 4px var(--warn-soft); }
+.src.ok { color: var(--text); }
 
-/* ───────── 절약 카드: 빛나는 초록 유리 ───────── */
+/* ───────── 절약 카드: 흑요석 유리 ───────── */
 
 .savings {
   background:
-    radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, .28), transparent 45%),
-    linear-gradient(150deg, rgba(52, 140, 100, .92), rgba(24, 74, 52, .94));
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, .22), transparent 45%),
+    linear-gradient(150deg, rgba(72, 72, 76, .94), rgba(18, 18, 20, .96));
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, .3);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 18px 40px rgba(36, 99, 72, .30);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
+  border: 1px solid rgba(255, 255, 255, .22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 18px 40px rgba(0, 0, 0, .25);
 }
-.savings::after { background: radial-gradient(circle, rgba(255, 255, 255, .28), transparent 70%); }
+.savings::after { background: radial-gradient(circle, rgba(255, 255, 255, .22), transparent 70%); }
 
 /* ───────── 겹쳐 뜨는 창: 요리 모드, 확인 창, 알림 ───────── */
 
 .cook {
-  background: var(--glass-sheen), color-mix(in srgb, var(--bg) 55%, transparent);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  backdrop-filter: blur(40px) saturate(180%);
+  background: var(--glass-sheen), color-mix(in srgb, var(--bg) 60%, transparent);
+  -webkit-backdrop-filter: blur(40px) saturate(170%);
+  backdrop-filter: blur(40px) saturate(170%);
 }
+.cook-main .stepno { color: var(--text-2); }
 .cook-top .progress { background: var(--glass-soft); border: 1px solid var(--glass-edge); height: 8px; }
-.cook-top .progress i { background: linear-gradient(90deg, #3E9A72, #1D5640); box-shadow: 0 0 12px rgba(62, 154, 114, .5); }
-.scrim { background: rgba(14, 24, 18, .28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.cook-top .progress i { background: var(--solid); }
+.scrim { background: rgba(0, 0, 0, .25); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet {
   background: var(--glass-sheen), var(--glass-strong);
   -webkit-backdrop-filter: var(--blur-strong);
@@ -280,7 +308,7 @@ body::before {
   box-shadow: var(--glass-hi), var(--glass-shadow-lg);
 }
 .toast {
-  background: rgba(20, 32, 25, .72);
+  background: rgba(28, 28, 30, .72);
   color: #fff;
   -webkit-backdrop-filter: var(--blur-strong);
   backdrop-filter: var(--blur-strong);
@@ -292,13 +320,13 @@ body::before {
 /* ───────── 투명도 줄이기 / 움직임 줄이기 / 오래된 브라우저 ───────── */
 
 @media (prefers-reduced-transparency: reduce) {
-  :root { --glass: #FFFFFF; --glass-strong: #FFFFFF; --glass-soft: #F3F0E8; --glass-sheen: linear-gradient(transparent, transparent); }
-  :root[data-theme="dark"] { --glass: #202822; --glass-strong: #202822; --glass-soft: #29332C; }
+  :root { --glass: #FFFFFF; --glass-strong: #FFFFFF; --glass-soft: #F2F2F7; --glass-sheen: linear-gradient(transparent, transparent); }
+  :root[data-theme="dark"] { --glass: #1C1C1E; --glass-strong: #1C1C1E; --glass-soft: #2C2C2E; }
   body::before { display: none; }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root { --glass: rgba(255, 255, 255, .88); --glass-strong: rgba(255, 255, 255, .95); }
-  :root[data-theme="dark"] { --glass: rgba(34, 44, 38, .92); --glass-strong: rgba(36, 47, 40, .96); }
+  :root { --glass: rgba(255, 255, 255, .9); --glass-strong: rgba(255, 255, 255, .96); }
+  :root[data-theme="dark"] { --glass: rgba(44, 44, 48, .94); --glass-strong: rgba(48, 48, 52, .97); }
 }
 @media (prefers-reduced-motion: reduce) {
   body::before { animation: none; }

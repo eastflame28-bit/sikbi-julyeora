@@ -60,11 +60,34 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
 }
 
+const darkQuery = matchMedia("(prefers-color-scheme: dark)");
+
 function applyTheme(theme) {
   const root = document.documentElement;
   if (theme === "light" || theme === "dark") root.dataset.theme = theme;
   else delete root.dataset.theme;
+  // 휴대폰 위쪽 상태 표시줄 색도 화면에 맞춘다
+  const dark = theme === "dark" || (theme !== "light" && darkQuery.matches);
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.content = dark ? "#0B0B0D" : "#EDEDF0"; });
 }
+
+const isDark = () => {
+  const t = state.data?.profile.theme;
+  return t === "dark" || (t !== "light" && darkQuery.matches);
+};
+
+// 위쪽 🌙/☀️ 버튼과 D 키: 지금 보이는 것과 반대로 바꾼다
+async function toggleTheme() {
+  if (!state.data) return;
+  const next = isDark() ? "light" : "dark";
+  applyTheme(next);
+  await saveProfile({ theme: next });
+  render();
+  toast(next === "dark" ? "어두운 화면으로 바꿨어요" : "밝은 화면으로 바꿨어요");
+}
+
+// 기기 설정을 따르는 중에 기기의 밝기 설정이 바뀌면 버튼 모양도 바꾼다
+darkQuery.addEventListener?.("change", () => { if (state.data?.profile.theme === "system") { applyTheme("system"); render(); } });
 
 const profile = () => state.data.profile;
 const pantry = () => state.data.pantry;
@@ -200,9 +223,12 @@ function renderTopbar() {
   topbar.innerHTML = `
     <div class="topbar-row">
       <a class="brand" href="#/find" aria-label="식비를 줄여라 처음 화면"><img src="assets/logo.svg" alt="">식비를 줄여라</a>
-      <button class="ai-pill ${info ? "on" : ""}" data-act="ai-toggle" data-key="ai-toggle" aria-expanded="${k.open}" aria-controls="ai-panel">
-        <span class="dot" aria-hidden="true"></span>${info ? "AI 연결됨" : "AI 설정"}
-      </button>
+      <div class="topbar-actions">
+        <button class="icon-btn theme-btn" data-act="theme-toggle" data-key="theme-toggle" aria-label="${isDark() ? "밝은 화면으로 바꾸기" : "어두운 화면으로 바꾸기"} (단축키 D)" title="${isDark() ? "밝은 화면" : "어두운 화면"} (D)">${icon(isDark() ? "sun" : "moon")}</button>
+        <button class="ai-pill ${info ? "on" : ""}" data-act="ai-toggle" data-key="ai-toggle" aria-expanded="${k.open}" aria-controls="ai-panel">
+          <span class="dot" aria-hidden="true"></span>${info ? "AI 연결됨" : "AI 설정"}
+        </button>
+      </div>
     </div>
     ${k.open ? `<section class="ai-panel" id="ai-panel" aria-labelledby="ai-panel-t">
       ${info ? `
@@ -941,6 +967,7 @@ function viewSettings() {
         <div class="t" style="display:flex;gap:8px;align-items:center">${icon("keyboard")} 키보드 단축키</div>
         <div class="kbd-help">
           <span><kbd>1</kbd>~<kbd>3</kbd></span><span>메뉴 이동 (요리 찾기 · 내 레시피 · 설정)</span>
+          <span><kbd>D</kbd></span><span>밝은 화면 ↔ 어두운 화면</span>
           <span><kbd>/</kbd></span><span>재료 입력칸으로 바로 가기</span>
           <span><kbd>Tab</kbd></span><span>다음 버튼으로 이동, <kbd>Enter</kbd>/<kbd>Space</kbd>로 누르기</span>
           <span><kbd>Esc</kbd></span><span>뒤로 가기 · 창 닫기</span>
@@ -1095,6 +1122,7 @@ const actions = {
   },
   "del-excluded": async (el) => { await saveProfile({ excluded: profile().excluded.filter((t) => t !== el.dataset.v) }); render(); },
   theme: async (el) => { await saveProfile({ theme: el.dataset.v }); applyTheme(el.dataset.v); render(); },
+  "theme-toggle": () => toggleTheme(),
   login: async () => {
     try { await signInWithGoogle(); } catch (e) { console.error(e); toast("구글 로그인을 열지 못했어요. 잠시 후 다시 시도해 주세요."); }
   },
@@ -1185,6 +1213,7 @@ document.addEventListener("keydown", (e) => {
 
   const n = Number(e.key);
   if (n >= 1 && n <= TABS.length) { e.preventDefault(); go(TABS[n - 1].id); return; }
+  if (e.key === "d" || e.key === "D" || e.key === "ㅇ") { e.preventDefault(); toggleTheme(); return; }
   if (e.key === "/") {
     e.preventDefault();
     if (state.route.name !== "find") go("find");
