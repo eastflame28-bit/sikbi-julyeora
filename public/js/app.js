@@ -352,7 +352,7 @@ function aiBox() {
       <button class="btn btn-ghost" data-act="ai-open" data-key="ai-open">${icon("key")} AI 연결하기</button>
     </div>`;
   }
-  if (ai.loading) return `<div class="loading small-loading"><img src="assets/cooking.svg" alt=""><p>AI가 내 재료로 만들 요리를 찾고 있어요… (20~40초)</p></div>`;
+  if (ai.loading) return `<div class="loading small-loading"><img src="assets/cooking.svg" alt=""><p>AI가 내 재료로 만들 요리를 찾고 있어요… (보통 30초~1분)</p></div>`;
   return `<div class="ai-box">
     ${ai.error ? `<p class="err" role="alert">${icon("alert")}${esc(ai.error)}</p>` : `<p><b>마음에 드는 요리가 없나요?</b><br><span class="muted">AI가 내 재료를 보고 새 요리 3가지를 찾아 드려요.</span></p>`}
     <button class="btn btn-ghost" data-act="ai-search" data-key="ai-search">${icon("sparkle")} ${ai.error ? "다시 시도" : "AI로 더 찾기"}</button>

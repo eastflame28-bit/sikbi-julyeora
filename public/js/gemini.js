@@ -29,18 +29,25 @@ class GeminiError extends Error {
   constructor(message, code) { super(message); this.code = code; }
 }
 
-async function call(path, key, body) {
-  let res;
+// timeoutMs 안에 답이 없으면 '바쁨'으로 보고 다음 모델로 넘어가게 한다
+async function call(path, key, body, timeoutMs = 20000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res, data;
   try {
     res = await fetch(`${API}/${path}`, {
       method: body ? "POST" : "GET",
       headers: { "x-goog-api-key": key, ...(body ? { "Content-Type": "application/json" } : {}) },
       body: body ? JSON.stringify(body) : undefined,
+      signal: ctrl.signal,
     });
-  } catch {
+    data = await res.json().catch(() => ({}));
+  } catch (e) {
+    if (e.name === "AbortError") throw new GeminiError("제미나이가 답을 너무 오래 만들고 있어요. 잠시 뒤에 다시 시도해 주세요.", "busy");
     throw new GeminiError("인터넷 연결을 확인하고 다시 시도해 주세요.", "network");
+  } finally {
+    clearTimeout(timer);
   }
-  const data = await res.json().catch(() => ({}));
   if (res.ok) return data;
   const msg = data?.error?.message || "";
   const reason = JSON.stringify(data?.error?.details || "");
@@ -183,7 +190,7 @@ async function generate(parts, system) {
   // 모델이 바쁘거나(503) 그 모델의 무료 한도가 찼으면(429) 다음 모델로 바로 넘어간다
   let data, lastErr;
   for (const model of info.models) {
-    try { data = await call(`${model}:generateContent`, info.key, body); break; }
+    try { data = await call(`${model}:generateContent`, info.key, body, 50000); break; }
     catch (e) { lastErr = e; if (e.code !== "busy" && e.code !== "quota") throw e; }
   }
   if (!data) throw lastErr;
