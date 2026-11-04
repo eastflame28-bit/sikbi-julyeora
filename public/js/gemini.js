@@ -52,20 +52,31 @@ async function call(path, key, body) {
 }
 
 // 쓸 수 있는 모델 중 가장 새로운 정식 flash 모델을 고른다 (빠르고 무료 한도가 넉넉한 쪽)
-function pickModel(models) {
-  const usable = models.filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"));
-  const stable = usable
-    .map((m) => ({ m, v: m.name.match(/^models\/gemini-(\d+(?:\.\d+)?)-flash$/)?.[1] }))
+// 맨 앞 모델이 바쁘면(503) 다음 모델로 넘어간다.
+// 정식 flash(새 버전 먼저) → flash-latest → 정식 flash-lite (무료 한도가 모델마다 따로라 대신 쓰기 좋다)
+function rankModels(models) {
+  const usable = models.filter((m) => (m.supportedGenerationMethods || []).includes("generateContent")).map((m) => m.name);
+  const byVersion = (re) => usable
+    .map((name) => ({ name, v: name.match(re)?.[1] }))
     .filter((x) => x.v)
-    .sort((a, b) => Number(b.v) - Number(a.v));
-  if (stable.length) return stable[0].m.name;
-  const latest = usable.find((m) => m.name === "models/gemini-flash-latest");
-  if (latest) return latest.name;
-  const anyFlash = usable.find((m) => /gemini-.*flash/.test(m.name) && !/(image|tts|live|audio|lite|exp)/.test(m.name));
-  if (anyFlash) return anyFlash.name;
-  const anyGemini = usable.find((m) => /gemini/.test(m.name));
-  if (anyGemini) return anyGemini.name;
-  throw new GeminiError("이 키로 쓸 수 있는 제미나이 모델이 없어요.", "nomodel");
+    .sort((a, b) => Number(b.v) - Number(a.v))
+    .map((x) => x.name);
+  const ranked = [
+    ...byVersion(/^models\/gemini-(\d+(?:\.\d+)?)-flash$/).slice(0, 2),
+    ...usable.filter((n) => n === "models/gemini-flash-latest"),
+    ...byVersion(/^models\/gemini-(\d+(?:\.\d+)?)-flash-lite$/).slice(0, 1),
+  ];
+  if (!ranked.length) {
+    const fallback = usable.find((n) => /gemini-.*flash/.test(n) && !/(image|tts|live|audio|exp)/.test(n)) || usable.find((n) => /gemini/.test(n));
+    if (fallback) ranked.push(fallback);
+  }
+  if (!ranked.length) throw new GeminiError("이 키로 쓸 수 있는 제미나이 모델이 없어요.", "nomodel");
+  return [...new Set(ranked)];
+}
+
+function saveInfo(info) {
+  try { localStorage.setItem(KEY_STORE, JSON.stringify(info)); } catch { /* 저장이 막혀도 이번 방문 동안은 쓴다 */ }
+  memo = info;
 }
 
 // 키를 확인하고 저장한다. 모델 목록만 읽어서 무료 사용량을 쓰지 않는다.
@@ -75,10 +86,9 @@ export async function connectGemini(rawKey) {
   // 예전 키는 AIza…, 새 키는 AQ.… 처럼 점이 들어간다
   if (!/^[\w.-]{20,}$/.test(key)) throw new GeminiError("키 모양이 이상해요. AI Studio에서 복사한 키를 그대로 붙여 넣어 주세요.", "invalid");
   const data = await call("models?pageSize=200", key);
-  const model = pickModel(data.models || []);
-  const info = { key, model, at: Date.now() };
-  try { localStorage.setItem(KEY_STORE, JSON.stringify(info)); } catch { /* 저장이 막혀도 이번 방문 동안은 쓴다 */ }
-  memo = info;
+  const models = rankModels(data.models || []);
+  const info = { key, model: models[0], models, at: Date.now() };
+  saveInfo(info);
   return info;
 }
 
@@ -158,13 +168,25 @@ const OUTPUT = {
 };
 
 async function generate(parts, system) {
-  const info = current();
+  let info = current();
   if (!info) throw new GeminiError("먼저 위쪽 'AI 설정'에서 제미나이 키를 연결해 주세요.", "nokey");
-  const data = await call(`${info.model}:generateContent`, info.key, {
+  // 예전에 연결해서 대신 쓸 모델 목록이 없으면 한 번 받아 둔다
+  if (!info.models?.length) {
+    try { info = { ...info, models: rankModels((await call("models?pageSize=200", info.key)).models || []) }; saveInfo(info); }
+    catch { info = { ...info, models: [info.model] }; }
+  }
+  const body = {
     systemInstruction: { parts: [{ text: system }] },
     contents: [{ role: "user", parts }],
     generationConfig: { responseMimeType: "application/json", responseSchema: OUTPUT, temperature: 0.8 },
-  });
+  };
+  // 모델이 바쁘거나(503) 그 모델의 무료 한도가 찼으면(429) 다음 모델로 바로 넘어간다
+  let data, lastErr;
+  for (const model of info.models) {
+    try { data = await call(`${model}:generateContent`, info.key, body); break; }
+    catch (e) { lastErr = e; if (e.code !== "busy" && e.code !== "quota") throw e; }
+  }
+  if (!data) throw lastErr;
   if (data.promptFeedback?.blockReason) throw new GeminiError("제미나이가 이 요청에는 답하지 않았어요. 재료를 바꿔 다시 시도해 주세요.", "blocked");
   const cand = data.candidates?.[0];
   if (cand?.finishReason === "MAX_TOKENS") throw new GeminiError("답이 너무 길어 중간에 끊겼어요. 다시 시도해 주세요.", "cut");
