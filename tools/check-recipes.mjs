@@ -36,7 +36,10 @@ for (const rel of onDisk) {
     if (!r.summary) warn(rel, r.title, "소개 없음");
     if (r.steps.length < 2) warn(rel, r.title, `단계 ${r.steps.length}개`);
     if (!r.total_minutes) warn(rel, r.title, "시간 없음");
+    const seen = new Set();
     for (const i of r.ingredients) {
+      if (seen.has(n(i.name))) warn(rel, r.title, `'${i.name}' 재료가 두 번 나옴`);
+      seen.add(n(i.name));
       if (!i.amount) warn(rel, r.title, `'${i.name}' 양 없음`);
       if (PREFER[n(i.name)]) warn(rel, r.title, `'${i.name}' → ${PREFER[n(i.name)]}`);
     }
