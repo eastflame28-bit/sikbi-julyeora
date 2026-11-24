@@ -250,3 +250,21 @@ export async function videoRecipe(url) {
   const parts = [{ fileData: { fileUri: url.trim() } }, { text: "이 영상의 요리를 레시피 하나로 정리해 줘." }];
   return clean(await generate(parts, SYSTEM_PROMPT + "\n\n[영상 정리]\n" + VIDEO_PROMPT), { max: 1 });
 }
+
+const DISH_PROMPT = `[요리 이름으로 찾기]
+- 이번에는 사용자가 고른 요리(dish) 하나의 가장 일반적인 한국 가정식 레시피를 쓴다.
+- '없는 필수 재료는 최대 2개' 규칙은 이번에는 적용하지 않는다. inventory는 참고만 하고, 그 요리에 필요한 재료를 빠짐없이 적는다.
+- 요리 이름이 음식이 아니거나 무엇인지 알 수 없으면 status="no_match"와 이유를 돌려준다.
+- recipes에는 요리 하나만 넣는다. title은 사용자가 쓴 요리 이름을 자연스럽게 다듬어 쓴다.`;
+
+export async function dishRecipe({ dish, pantry, excluded, servings, notes, onStatus }) {
+  const input = {
+    dish: String(dish).slice(0, 40),
+    servings,
+    excluded_ingredients: excluded,
+    inventory: pantry.map((p) => p.name),
+    my_notes: notes.slice(0, 5),
+    request: "dish에 적힌 요리 하나의 레시피를 필요한 재료와 전체 조리 순서까지 써 줘.",
+  };
+  return clean(await generate([{ text: JSON.stringify(input) }], SYSTEM_PROMPT + "\n\n" + DISH_PROMPT, onStatus), { excluded, max: 1 });
+}

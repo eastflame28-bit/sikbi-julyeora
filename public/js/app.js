@@ -3,8 +3,8 @@
 import { icon } from "./icons.js";
 import { ALL_NAMES, BASICS, SUGGEST, norm } from "./catalog.js";
 import { openStore, signInWithGoogle, signOut, supabase, uid } from "./store.js";
-import { annotate, findRecipes, markRecipe, newId, shareRecipes } from "./pool.js";
-import { aiRecipes, connectGemini, disconnectGemini, geminiInfo, isYoutubeUrl, modelLabel, videoRecipe } from "./gemini.js";
+import { annotate, findRecipes, markRecipe, newId, searchDishes, setCustomBasics, shareRecipes } from "./pool.js";
+import { aiRecipes, connectGemini, dishRecipe, disconnectGemini, geminiInfo, isYoutubeUrl, modelLabel, videoRecipe } from "./gemini.js";
 import { SEED_RECIPES } from "./seed-recipes.js";
 import { config } from "./config.js";
 import { SUBSTITUTES, SUB_CATS, availableOptions } from "./subs.js";
@@ -16,6 +16,8 @@ const tabbar = $("#tabbar");
 const topbar = $("#topbar");
 const overlayRoot = $("#overlay-root");
 
+// 받침에 맞춰 을/를, 은/는을 고른다
+const josa = (w, pair) => { const c = String(w).charCodeAt(String(w).length - 1); const has = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 > 0; return w + (has ? pair[0] : pair[1]); };
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const won = (n) => "₩" + Math.round(n).toLocaleString("ko-KR");
 const fmtDate = (t) => new Date(t).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" });
@@ -28,6 +30,7 @@ const TABS = [
 ];
 const KEY_URL = "https://aistudio.google.com/apikey";
 const CATS = ["밥·면", "국·찌개", "반찬", "메인", "전"];
+const POPULAR_DISHES = ["김치찌개", "된장찌개", "제육볶음", "계란말이", "김치볶음밥", "떡볶이", "미역국", "잡채"];
 const COMMON_BASICS = ["소금", "설탕", "식용유", "진간장", "참기름", "다진마늘", "후추", "고춧가루"];
 
 const state = {
@@ -48,6 +51,7 @@ const state = {
   more: {},
   video: { loading: false, error: null, draft: null, url: "" },
   recipeLoading: null,
+  dish: { q: "", list: null, ai: { loading: false, error: null, status: "" } },
 };
 
 // ───────── 공통 ─────────
@@ -93,6 +97,8 @@ darkQuery.addEventListener?.("change", () => { if (state.data?.profile.theme ===
 const profile = () => state.data.profile;
 const pantry = () => state.data.pantry;
 const signedIn = () => state.store.mode === "cloud";
+const customBasics = () => profile().customBasics || [];
+const allBasics = () => [...BASICS, ...customBasics()];
 
 async function saveProfile(patch) {
   const next = { ...profile(), ...patch };
@@ -183,6 +189,7 @@ function render({ focusMain = false } = {}) {
   const active = document.activeElement;
   const key = active?.dataset?.key;
 
+  setCustomBasics(customBasics());
   const r = state.route;
   const views = { find: viewFind, recipe: viewRecipe, my: viewMy, settings: viewSettings, subs: viewSubs };
   const view = views[r.name] || viewFind;
@@ -192,7 +199,7 @@ function render({ focusMain = false } = {}) {
   if (TABS.some((t) => t.id === r.name)) state.lastTab = r.name;
 
   main.innerHTML = `<div class="inner">${banners()}${view(r.param)}</div>`;
-  if (r.name === "find") ensureResults();
+  if (r.name === "find" && r.param !== "dish") ensureResults();
   if (r.name === "recipe") { ensureRecipe(r.param); ensureVideos(); }
 
   if (key) {
@@ -292,14 +299,24 @@ async function connectKey() {
 
 // ───────── 요리 찾기 ─────────
 
-function viewFind() {
+function findModes(mode) {
+  return `<div class="seg find-mode" role="group" aria-label="찾는 방법">
+    <button data-act="go" data-v="find" data-key="mode-pantry" aria-pressed="${mode === "pantry"}">${icon("search")} 재료로 찾기</button>
+    <button data-act="go" data-v="find/dish" data-key="mode-dish" aria-pressed="${mode === "dish"}">${icon("book")} 요리 이름으로 찾기</button>
+  </div>`;
+}
+
+function viewFind(param) {
+  if (param === "dish") return viewDish();
   const list = pantry();
   const have = new Set(list.map((p) => norm(p.name)));
   const suggest = SUGGEST.filter((n) => !have.has(n)).slice(0, 5);
-  const basicsOn = BASICS.filter((n) => have.has(n));
-  const fridge = list.filter((p) => !BASICS.includes(norm(p.name)));
+  const basics = allBasics();
+  const basicsOn = basics.filter((n) => have.has(n));
+  const fridge = list.filter((p) => !basics.includes(norm(p.name)));
 
   return `
+  ${findModes("pantry")}
   <header class="find-head">
     <h1 class="page-title">냉장고에 뭐가 있나요?</h1>
   </header>
@@ -332,6 +349,18 @@ function viewFind() {
     <div class="chips">
       ${!basicsOn.length ? `<button class="chip ghost strong" data-act="basics-common" data-key="basics-common">${icon("check")}흔한 양념 한 번에 고르기</button>` : ""}
       ${BASICS.map((n) => `<button class="chip" data-act="toggle-basic" data-v="${n}" data-key="basic-${n}" aria-pressed="${have.has(n)}">${have.has(n) ? icon("check") : ""}${n}</button>`).join("")}
+      ${customBasics().map((n) => `<span class="chip-pair">
+        <button class="chip" data-act="toggle-basic" data-v="${esc(n)}" data-key="basic-${esc(n)}" aria-pressed="${have.has(n)}">${have.has(n) ? icon("check") : ""}${esc(n)}</button>
+        <button class="chip-del" data-act="del-basic" data-v="${esc(n)}" data-key="del-basic-${esc(n)}" aria-label="${esc(n)} 양념 목록에서 빼기" title="목록에서 빼기">${icon("x")}</button>
+      </span>`).join("")}
+    </div>
+    <div class="basic-add">
+      <label class="sr-only" for="basic-input">목록에 없는 양념 넣기</label>
+      <div class="add-row">
+        <input class="input" id="basic-input" data-key="basic-input" list="names" autocomplete="off" enterkeyhint="done" placeholder="목록에 없는 양념 (예: 버터, 케첩)" data-enter="add-basic">
+        <button class="btn btn-ghost" data-act="add-basic" data-key="add-basic">${icon("plus")} 양념 추가</button>
+      </div>
+      <p class="hint-line">늘 집에 있는 양념을 넣어 두면 다음에도 기본 양념 목록에 남아요</p>
     </div>
   </details>
 
@@ -341,6 +370,135 @@ function viewFind() {
   ${!list.length ? `<p class="hint-line center">재료를 하나 이상 넣어 주세요</p>` : ""}
 
   <div id="results" aria-live="polite">${resultsHtml()}</div>`;
+}
+
+// ───────── 요리 이름으로 찾기 ─────────
+
+function viewDish() {
+  const d = state.dish;
+  if (d.q.trim() && !d.list) searchDish(d.q, { now: true });
+  return `
+  ${findModes("dish")}
+  <header class="find-head">
+    <h1 class="page-title">무슨 요리를 하고 싶나요?</h1>
+  </header>
+  <div class="field">
+    <label for="dish-input">요리 이름</label>
+    <div class="add-row">
+      <input class="input input-lg" id="dish-input" data-key="dish-input" type="search" autocomplete="off" enterkeyhint="search" placeholder="예: 김치찌개, 잡채" value="${esc(d.q)}" data-enter="dish-go">
+      <button class="btn btn-primary" data-act="dish-go" data-key="dish-go">${icon("search")} 찾기</button>
+    </div>
+    <p class="hint-line">레시피를 고르면 필요한 재료와 만드는 순서가 나와요. 이미 있는 재료에는 체크 표시가 붙어요</p>
+  </div>
+  <div id="dish-results" aria-live="polite">${dishResultsHtml()}</div>`;
+}
+
+function dishResultsHtml() {
+  const d = state.dish;
+  const q = d.q.trim();
+  if (!q) {
+    return `<div class="suggest">
+      <span class="muted small">많이 찾는 요리</span>
+      <div class="chips">${POPULAR_DISHES.map((n) => `<button class="chip" data-act="dish-pick" data-v="${n}" data-key="pop-${n}">${n}</button>`).join("")}</div>
+    </div>`;
+  }
+  if (!d.list) return `<div class="loading small-loading"><img src="assets/cooking.svg" alt=""><p>레시피를 찾고 있어요…</p></div>`;
+  const bad = profile().excluded.map(norm).filter(Boolean);
+  const list = d.list
+    .filter((r) => !r.ingredients.some((i) => bad.some((b) => norm(i.name).includes(b))))
+    .map((r) => annotate(r, pantry()));
+  const exact = list.some((r) => norm(r.title) === norm(q));
+  return `
+    ${list.length ? `<section class="section" aria-labelledby="dish-t">
+      <h2 class="section-title" id="dish-t" tabindex="-1">${icon("book")} '${esc(q)}' 레시피 <span class="count">${list.length}개</span></h2>
+      <div class="recipe-grid">${list.slice(0, 24).map((r, i) => cardHtml(r, i, "dish")).join("")}</div>
+    </section>` : `<div class="empty">
+      <img src="assets/empty-recipes.svg" alt="">
+      <h2>'${esc(q)}' 레시피가 아직 없어요</h2>
+      <p>${geminiInfo() ? "AI에게 이 요리의 레시피를 받아 볼 수 있어요." : "다른 이름으로 찾아보거나, AI를 연결하면 이 요리의 레시피를 받아 볼 수 있어요."}</p>
+    </div>`}
+    ${exact ? "" : dishAiBox(q)}`;
+}
+
+function dishAiBox(q) {
+  const ai = state.dish.ai;
+  if (!geminiInfo()) {
+    return `<div class="ai-box">
+      <p><b>찾는 요리가 없나요?</b><br><span class="muted">AI를 연결하면 어떤 요리든 재료와 만드는 순서를 받아 볼 수 있어요.</span></p>
+      <button class="btn btn-ghost" data-act="ai-open" data-key="ai-open">${icon("key")} AI 연결하기</button>
+    </div>`;
+  }
+  if (ai.loading) {
+    return `<div class="loading small-loading ai-wait"><img src="assets/cooking.svg" alt="">
+      <p><b>AI가 '${esc(q)}' 레시피를 쓰고 있어요</b> <span class="elapsed" id="dish-elapsed">${Math.round((Date.now() - ai.startedAt) / 1000)}초</span></p>
+      <p class="muted small" id="dish-status">${esc(ai.status || "재료와 조리 순서를 정리하고 있어요. 보통 20~40초 걸려요.")}</p>
+    </div>`;
+  }
+  return `<div class="ai-box">
+    ${ai.error ? `<p class="err" role="alert">${icon("alert")}${esc(ai.error)}</p>` : `<p><b>찾는 요리가 없나요?</b><br><span class="muted">AI가 '${esc(q)}'의 재료와 만드는 순서를 써 드려요.</span></p>`}
+    <button class="btn btn-ghost" data-act="dish-ai" data-key="dish-ai">${icon("sparkle")} ${ai.error ? "다시 시도" : `AI에게 '${esc(q)}' 레시피 받기`}</button>
+  </div>`;
+}
+
+function updateDish() {
+  const box = $("#dish-results");
+  if (!box) return;
+  const key = document.activeElement?.dataset?.key;
+  box.innerHTML = dishResultsHtml();
+  if (key) box.querySelector(`[data-key="${CSS.escape(key)}"]`)?.focus({ preventScroll: true });
+}
+
+let dishTimer, dishSeq = 0;
+function searchDish(q, { now = false } = {}) {
+  const d = state.dish;
+  d.q = q;
+  if (!d.ai.loading) d.ai.error = null;
+  clearTimeout(dishTimer);
+  if (!q.trim()) { d.list = []; updateDish(); return; }
+  const seq = ++dishSeq;
+  const run = async () => {
+    try {
+      const list = await searchDishes(q, [...state.data.recipes, ...state.cache.values()]);
+      if (seq === dishSeq) { d.list = list; updateDish(); }
+    } catch (e) {
+      console.error(e);
+      if (seq === dishSeq) { d.list = []; updateDish(); }
+    }
+  };
+  if (now) run(); else dishTimer = setTimeout(run, 300);
+}
+
+async function runDishAi() {
+  const d = state.dish;
+  const q = d.q.trim();
+  if (!q || d.ai.loading) return;
+  d.ai = { loading: true, error: null, status: "", startedAt: Date.now() };
+  updateDish();
+  const tick = setInterval(() => {
+    const el = $("#dish-elapsed");
+    if (el) el.textContent = `${Math.round((Date.now() - d.ai.startedAt) / 1000)}초`;
+  }, 1000);
+  let opened = false;
+  try {
+    const out = await dishRecipe({ dish: q, pantry: pantry(), excluded: profile().excluded, servings: profile().servings, notes: myNotes(),
+      onStatus: (msg) => { d.ai.status = msg; const el = $("#dish-status"); if (el) el.textContent = msg; } });
+    if (out.status !== "ok") { d.ai.error = out.message || `'${q}' 레시피를 만들지 못했어요. 요리 이름을 다시 확인해 주세요.`; return; }
+    const r = { ...out.recipes[0], id: newId("ai"), source: "ai" };
+    cacheRecipe(r);
+    d.list = [r, ...(d.list || [])];
+    shareRecipes([r]).then((ok) => { if (ok) toast("AI 레시피를 모두의 레시피 창고에 보탰어요"); });
+    opened = true;
+    d.ai.loading = false;
+    go(`recipe/${encodeURIComponent(r.id)}`);
+  } catch (e) {
+    console.error(e);
+    d.ai.error = e.message || "AI 레시피를 받지 못했어요.";
+    if (e.code === "invalid" || e.code === "denied") { disconnectGemini(); renderTopbar(); }
+  } finally {
+    clearInterval(tick);
+    d.ai.loading = false;
+    if (!opened && state.route.param === "dish") { updateDish(); if (d.ai.error) $('[data-key="dish-ai"]')?.focus(); }
+  }
 }
 
 function resultsHtml() {
@@ -419,8 +577,21 @@ function sourceLabel(r) {
   return `<span class="src">기본 레시피</span>`;
 }
 
-function cardHtml(r, idx = 0) {
+function cardHtml(r, idx = 0, mode = "pantry") {
   const saved = savedVersion(r.id);
+  if (mode === "dish") {
+    const total = r.ingredients.length, got = r.ingredients.filter((x) => x.have).length;
+    const need = r.missing.length;
+    return `<a class="rcard" href="#/recipe/${encodeURIComponent(r.id)}" data-key="card-${esc(r.id)}" style="animation-delay:${Math.min(idx, 6) * 30}ms">
+    <span class="thumb" aria-hidden="true">${esc(r.emoji || "🍽️")}</span>
+    <span class="body">
+      <h3>${esc(r.title)}${saved?.favorite ? `<span class="sr-only"> (즐겨찾기)</span>${icon("star", "fav")}` : ""}</h3>
+      <span class="meta">${r.total_minutes ? `${r.total_minutes}분 · ` : ""}${DIFF[r.difficulty] || "쉬움"} · 재료 ${total}가지${got ? `, ${got}개 있음` : ""}</span>
+      ${need ? `<span class="need">${icon("cart")}${need > 3 ? `${r.missing.slice(0, 3).map(esc).join(", ")} 외 ${need - 3}개` : r.missing.map(esc).join(", ")} 필요</span>` : `<span class="src ok">${icon("check")}재료가 다 있어요</span>`}
+      ${sourceLabel(r)}
+    </span>
+  </a>`;
+  }
   return `<a class="rcard" href="#/recipe/${encodeURIComponent(r.id)}" data-key="card-${esc(r.id)}" style="animation-delay:${Math.min(idx, 6) * 30}ms">
     <span class="thumb" aria-hidden="true">${esc(r.emoji || "🍽️")}</span>
     <span class="body">
@@ -563,7 +734,9 @@ function viewRecipe(id) {
     <aside class="aside">
       <section class="card" aria-labelledby="ing-t">
         <h2 class="section-title" id="ing-t">재료 <span class="count">${r.ingredients.filter((x) => x.have).length}/${r.ingredients.length} 있음</span></h2>
-        ${r.missing.length ? `<p class="need-line">${icon("cart")}<span><b>${r.missing.map(esc).join(", ")}</b>만 있으면 바로 만들 수 있어요</span></p>` : ""}
+        ${r.missing.length ? `<p class="need-line">${icon("cart")}<span>${r.missing.length <= 2
+          ? `<b>${r.missing.map(esc).join(", ")}</b>만 있으면 바로 만들 수 있어요`
+          : `더 필요한 재료 ${r.missing.length}가지: <b>${r.missing.map(esc).join(", ")}</b>`}</span></p>` : ""}
         ${r.swaps.length ? `<p class="swap-line">${icon("leaf")}<span>없는 재료 ${r.swaps.length}개는 <b>집에 있는 재료로 대신</b>할 수 있어요</span></p>` : ""}
         <ul class="ing-list">
           ${r.ingredients.map((x) => `<li class="${x.have ? "have" : x.swap ? "swap" : "miss"}">
@@ -708,6 +881,7 @@ function subsListHtml() {
 }
 
 document.addEventListener("input", (e) => {
+  if (e.target.id === "dish-input") { searchDish(e.target.value); return; }
   if (e.target.id !== "subs-input") return;
   state.subsQuery = e.target.value;
   const box = $("#subs-list");
@@ -1064,11 +1238,49 @@ const actions = {
     $("#key-input")?.focus();
   },
   "add-pantry": addPantryFromInput,
+  go: (el) => go(el.dataset.v),
+  "dish-go": () => {
+    const v = $("#dish-input")?.value || "";
+    if (!v.trim()) { $("#dish-input")?.focus(); return; }
+    searchDish(v, { now: true });
+    setTimeout(() => $("#dish-results")?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+  },
+  "dish-pick": (el) => {
+    const input = $("#dish-input");
+    if (input) input.value = el.dataset.v;
+    state.dish.list = null;
+    state.dish.q = el.dataset.v;
+    updateDish();
+    searchDish(el.dataset.v, { now: true });
+    input?.focus();
+  },
+  "dish-ai": () => runDishAi(),
+  "add-basic": async () => {
+    const input = $("#basic-input");
+    const name = norm(input?.value || "").slice(0, 20);
+    if (!name) { input?.focus(); return; }
+    const isNew = !allBasics().includes(name);
+    state.basicsOpen = true;
+    if (isNew) await saveProfile({ customBasics: [...customBasics(), name] });
+    // 넣은 양념은 바로 '있음'으로 고른다
+    if (!pantry().some((p) => norm(p.name) === name)) await savePantry([...pantry(), { name }]);
+    else render();
+    toast(isNew ? `${josa(name, "을를")} 기본 양념에 넣었어요` : `${josa(name, "은는")} 이미 기본 양념에 있어서 골라 두었어요`);
+    $("#basic-input")?.focus();
+  },
+  "del-basic": async (el) => {
+    const n = el.dataset.v;
+    state.basicsOpen = true;
+    await saveProfile({ customBasics: customBasics().filter((x) => x !== n) });
+    await savePantry(pantry().filter((p) => norm(p.name) !== n));
+    toast(`${josa(n, "을를")} 기본 양념 목록에서 뺐어요`);
+    $("#basic-input")?.focus();
+  },
   "add-one": (el) => { addPantry(el.dataset.v); },
   "del-pantry": (el) => savePantry(pantry().filter((p) => p.name !== el.dataset.v)),
   "clear-pantry": async () => {
     const ok = await confirmSheet({ title: "넣은 재료를 모두 지울까요?", body: "기본 양념은 그대로 남아요.", ok: "모두 지우기", danger: true });
-    if (ok) savePantry(pantry().filter((p) => BASICS.includes(norm(p.name))));
+    if (ok) savePantry(pantry().filter((p) => allBasics().includes(norm(p.name))));
   },
   "toggle-basic": (el) => {
     const n = el.dataset.v;
@@ -1253,7 +1465,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "/") {
     e.preventDefault();
     if (state.route.name !== "find") go("find");
-    setTimeout(() => $("#pantry-input")?.focus(), 0);
+    setTimeout(() => ($("#dish-input") || $("#pantry-input"))?.focus(), 0);
     return;
   }
   if (e.key === "Escape") {

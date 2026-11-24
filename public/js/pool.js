@@ -6,6 +6,11 @@ import { BASICS, expandNames, hasIngredient, norm } from "./catalog.js";
 import { supabase, uid } from "./store.js";
 import { findSwap } from "./subs.js";
 
+// 사용자가 직접 넣은 기본 양념(버터, 케첩 등). 기본 양념처럼 '주재료'로 세지 않는다.
+let customBasics = [];
+export function setCustomBasics(list) { customBasics = (list || []).map(norm); }
+const isBasic = (name) => BASICS.includes(norm(name)) || customBasics.includes(norm(name));
+
 // 레시피 재료마다 '있음 / 대신 쓸 수 있음 / 없음'을 표시하고 부족한 필수 재료를 계산한다.
 // (AI가 보낸 값도 그대로 믿지 않고 내 재료 목록과 다시 맞춰 본다)
 export function annotate(recipe, pantry) {
@@ -17,7 +22,7 @@ export function annotate(recipe, pantry) {
   const lacking = ingredients.filter((x) => !x.optional && !x.have);
   const missing = lacking.filter((x) => !x.swap).map((x) => x.name);
   const swaps = lacking.filter((x) => x.swap).map((x) => ({ name: x.name, use: x.swap.use }));
-  const mainUsed = ingredients.filter((x) => x.have && !BASICS.includes(norm(x.name))).length;
+  const mainUsed = ingredients.filter((x) => x.have && !isBasic(x.name)).length;
   return { ...recipe, ingredients, missing, swaps, mainUsed };
 }
 
@@ -83,6 +88,27 @@ export async function findRecipes({ pantry, excluded, extra = [] }) {
     almost: list.filter((r) => r.missing.length > 0).slice(0, 200),
     cloud,
   };
+}
+
+// 요리 이름으로 찾기: 이름에 검색어가 들어간 레시피를 기본 레시피·내 레시피·공용 창고에서 모은다.
+// 반환: 원래 레시피 목록 (정확히 같은 이름 → 검색어로 시작 → 나머지 순)
+export async function searchDishes(query, extra = []) {
+  const q = norm(query);
+  if (!q) return [];
+  const byId = new Map();
+  const hit = (r) => norm(r.title).includes(q) || (q.length >= 3 && q.includes(norm(r.title)));
+  for (const r of [...SEED_RECIPES, ...extra]) if (hit(r)) byId.set(r.id, r);
+
+  const sb = await supabase();
+  if (sb) {
+    // 띄어쓰기가 달라도 찾도록 글자 사이에 %를 넣는다 ("김치 찌개" → 김%치%찌%개)
+    const like = "%" + [...q].map((c) => c.replace(/[%_\\]/g, "")).filter(Boolean).join("%") + "%";
+    const { data, error } = await sb.from("recipes").select("*").ilike("title", like).limit(30);
+    if (error) console.warn("공용 레시피를 찾지 못함", error);
+    else for (const row of data) if (!byId.has(row.id)) byId.set(row.id, fromRow(row));
+  }
+  const rank = (r) => { const t = norm(r.title); return t === q ? 0 : t.startsWith(q) ? 1 : 2; };
+  return [...byId.values()].sort((a, b) => rank(a) - rank(b) || (a.source === "ai") - (b.source === "ai") || a.title.length - b.title.length);
 }
 
 const fingerprint = (r) => norm(r.title) + "|" + r.ingredients

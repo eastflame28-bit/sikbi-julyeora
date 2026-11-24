@@ -663,3 +663,19 @@ kbd, .hint {
 }
 
 .noscript { padding: 24px; text-align: center; }
+
+/* ───────── 찾는 방법 고르기 · 내가 넣은 양념 ───────── */
+.find-mode { margin: 4px 0 20px; }
+.find-mode button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.find-mode svg { width: 18px; height: 18px; }
+.chip-pair { display: inline-flex; align-items: center; }
+.chip-del { min-width: 44px !important; padding: 0; }
+.chip-del {
+  min-height: 44px; min-width: 40px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 999px; margin-left: 4px;
+  background: var(--surface); color: var(--text-2); cursor: pointer;
+}
+.chip-del:hover { color: var(--danger, #C0392B); border-color: currentColor; }
+.chip-del svg { width: 16px; height: 16px; }
+.basic-add { padding: 0 16px 16px; border-top: 1px dashed var(--line); padding-top: 14px; margin-top: -2px; }
+.basic-add .hint-line { margin-top: 6px; }

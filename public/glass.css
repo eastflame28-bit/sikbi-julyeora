@@ -355,3 +355,6 @@ body::before {
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .empty img, :root:not([data-theme="light"]) .loading img { filter: none; }
 }
+
+/* 내가 넣은 양념의 빼기 버튼 */
+.chip-del { background: var(--glass-soft); border-color: var(--glass-edge); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }

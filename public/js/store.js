@@ -14,6 +14,7 @@ export const DEFAULT_PROFILE = {
   excluded: [],
   eatOutPrice: 12000,
   theme: "system",
+  customBasics: [], // 사용자가 직접 넣은 기본 양념 (예: 버터, 케첩)
 };
 
 const empty = () => ({ profile: { ...DEFAULT_PROFILE }, pantry: [], recipes: [], cooks: [] });
