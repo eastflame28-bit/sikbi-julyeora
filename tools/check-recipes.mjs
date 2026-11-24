@@ -13,11 +13,13 @@ const CATS = ["밥·면", "국·찌개", "반찬", "메인", "전", "간식"];
 const PREFER = { 달걀: "계란", 간장: "진간장/국간장", 식물성기름: "식용유", 깨: "통깨", 파: "대파/쪽파", 다진파: "대파", 고추가루: "고춧가루" };
 const n = (s) => String(s).replace(/\s+/g, "");
 
-const titles = new Map(SEED_RECIPES.map((r) => [n(r.title), "기본"]));
 let total = 0, problems = 0;
+const titles = new Map(SEED_RECIPES.map((r) => [n(r.title), "기본"]));
 const warn = (f, t, msg) => { problems++; console.log(`  ⚠ ${f} · ${t}: ${msg}`); };
 
-for (const rel of LIBRARY_FILES) {
+const onDisk = fs.readdirSync(path.join(root, "data")).filter((f) => /^recipes-\d+\.txt$/.test(f)).sort().map((f) => "data/" + f);
+if (onDisk.length !== LIBRARY_FILES.length) { problems++; console.log(`⚠ 파일 ${onDisk.length}개인데 library.js는 ${LIBRARY_FILES.length}개만 읽어요 (length 값을 바꿔 주세요)`); }
+for (const rel of onDisk) {
   const file = path.join(root, rel);
   if (!fs.existsSync(file)) { console.log(`${rel}: (아직 없음)`); continue; }
   const text = fs.readFileSync(file, "utf8");
