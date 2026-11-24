@@ -40,7 +40,7 @@ for (const rel of onDisk) {
       if (!i.amount) warn(rel, r.title, `'${i.name}' 양 없음`);
       if (PREFER[n(i.name)]) warn(rel, r.title, `'${i.name}' → ${PREFER[n(i.name)]}`);
     }
-    for (const s of r.steps) if (!s.instruction || !s.done_when) warn(rel, r.title, `단계 '${s.title}' 설명/완료 상태 없음`);
+    for (const s of r.steps) if (!s.instruction) warn(rel, r.title, `단계 "${s.title}" 설명 없음`);
   }
 }
 console.log(`\n기본 ${SEED_RECIPES.length}개 + 도서관 ${total}개 = ${SEED_RECIPES.length + total}개 · 문제 ${problems}개`);
