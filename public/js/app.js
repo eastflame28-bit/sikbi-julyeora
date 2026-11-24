@@ -6,6 +6,7 @@ import { openStore, signInWithGoogle, signOut, supabase, uid } from "./store.js"
 import { annotate, findRecipes, markRecipe, newId, searchDishes, setCustomBasics, shareRecipes } from "./pool.js";
 import { aiRecipes, connectGemini, dishRecipe, disconnectGemini, geminiInfo, isYoutubeUrl, modelLabel, videoRecipe } from "./gemini.js";
 import { SEED_RECIPES } from "./seed-recipes.js";
+import { libraryReady, libraryRecipe, loadLibrary } from "./library.js";
 import { config } from "./config.js";
 import { SUBSTITUTES, SUB_CATS, availableOptions } from "./subs.js";
 import { formatViews, topVideos, youtubeEnabled } from "./youtube.js";
@@ -29,7 +30,7 @@ const TABS = [
   { id: "settings", label: "설정", icon: "gear" },
 ];
 const KEY_URL = "https://aistudio.google.com/apikey";
-const CATS = ["밥·면", "국·찌개", "반찬", "메인", "전"];
+const CATS = ["밥·면", "국·찌개", "반찬", "메인", "전", "간식"];
 const POPULAR_DISHES = ["김치찌개", "된장찌개", "제육볶음", "계란말이", "김치볶음밥", "떡볶이", "미역국", "잡채"];
 const COMMON_BASICS = ["소금", "설탕", "식용유", "진간장", "참기름", "다진마늘", "후추", "고춧가루"];
 
@@ -116,6 +117,7 @@ function findRecipe(id) {
   return state.cache.get(id)
     || state.data.recipes.find((r) => r.id === id)
     || SEED_RECIPES.find((r) => r.id === id)
+    || libraryRecipe(id)
     || null;
 }
 
@@ -699,7 +701,7 @@ function addPantryFromInput() {
 function viewRecipe(id) {
   let r = findRecipe(id);
   if (!r) {
-    if (state.recipeLoading === id) return `<div class="loading"><img src="assets/cooking.svg" alt=""><p>레시피를 불러오는 중…</p></div>`;
+    if (state.recipeLoading === id || (id.startsWith("x-") && !libraryReady())) return `<div class="loading"><img src="assets/cooking.svg" alt=""><p>레시피를 불러오는 중…</p></div>`;
     return `<div class="empty">
       <img src="assets/empty-recipes.svg" alt="">
       <h2>레시피를 찾을 수 없어요</h2>
@@ -828,7 +830,7 @@ async function ensureVideos() {
 
 // 공용 창고의 레시피를 새로고침 뒤 바로 열었을 때 Supabase에서 한 번 더 찾아본다
 async function ensureRecipe(id) {
-  if (findRecipe(id) || state.recipeLoading === id || state.recipeMissing === id) return;
+  if (id.startsWith("x-") || findRecipe(id) || state.recipeLoading === id || state.recipeMissing === id) return;
   const sb = await supabase();
   if (!sb) return;
   state.recipeLoading = id;
@@ -1486,6 +1488,7 @@ function trapFocus(e, box) {
 
 (async function start() {
   main.innerHTML = `<div class="loading"><img src="assets/logo.svg" alt="" style="width:72px;border-radius:18px"><p>불러오는 중…</p></div>`;
+  loadLibrary().then(() => { if (state.route.name === "recipe" || state.route.param === "dish") render(); });
   await reloadStore();
   restoreCache();
   state.route = parseRoute();

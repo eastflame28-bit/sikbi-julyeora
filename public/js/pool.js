@@ -5,6 +5,7 @@ import { SEED_RECIPES } from "./seed-recipes.js";
 import { BASICS, expandNames, hasIngredient, norm } from "./catalog.js";
 import { supabase, uid } from "./store.js";
 import { findSwap } from "./subs.js";
+import { libraryRecipes, loadLibrary } from "./library.js";
 
 // 사용자가 직접 넣은 기본 양념(버터, 케첩 등). 기본 양념처럼 '주재료'로 세지 않는다.
 let customBasics = [];
@@ -55,7 +56,8 @@ export async function fetchStats(ids) {
 export async function findRecipes({ pantry, excluded, extra = [] }) {
   const names = pantry.map((p) => norm(p.name));
   const byId = new Map();
-  for (const r of [...SEED_RECIPES, ...extra]) byId.set(r.id, r);
+  await loadLibrary();
+  for (const r of [...SEED_RECIPES, ...libraryRecipes(), ...extra]) byId.set(r.id, r);
 
   let cloud = false;
   const sb = await supabase();
@@ -97,7 +99,8 @@ export async function searchDishes(query, extra = []) {
   if (!q) return [];
   const byId = new Map();
   const hit = (r) => norm(r.title).includes(q) || (q.length >= 3 && q.includes(norm(r.title)));
-  for (const r of [...SEED_RECIPES, ...extra]) if (hit(r)) byId.set(r.id, r);
+  await loadLibrary();
+  for (const r of [...SEED_RECIPES, ...libraryRecipes(), ...extra]) if (hit(r)) byId.set(r.id, r);
 
   const sb = await supabase();
   if (sb) {

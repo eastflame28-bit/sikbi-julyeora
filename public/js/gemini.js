@@ -120,7 +120,7 @@ const SYSTEM_PROMPT = `당신은 한국 가정식 조리 도우미다. 지정된
 
 [형식]
 - total_minutes는 준비와 조리를 합한 시간. amount는 "1/2모", "1큰술"처럼 한국 가정 단위.
-- category는 밥·면, 국·찌개, 반찬, 메인, 전 중 하나. emoji는 요리를 나타내는 이모지 한 개. summary는 40자 이내 한 줄 소개.
+- category는 밥·면, 국·찌개, 반찬, 메인, 전, 간식 중 하나. emoji는 요리를 나타내는 이모지 한 개. summary는 40자 이내 한 줄 소개.
 - 확인되지 않은 영양 수치, 가격, 출처는 만들지 않는다. HTML이나 마크다운은 쓰지 않는다.`;
 
 const VIDEO_PROMPT = `이 요리 영상을 보고 레시피로 정리한다.
@@ -135,7 +135,7 @@ const RECIPE = {
   type: "OBJECT",
   properties: {
     title: str, emoji: str,
-    category: { type: "STRING", enum: ["밥·면", "국·찌개", "반찬", "메인", "전"] },
+    category: { type: "STRING", enum: ["밥·면", "국·찌개", "반찬", "메인", "전", "간식"] },
     summary: str,
     servings: { type: "INTEGER" },
     total_minutes: { type: "INTEGER" },
