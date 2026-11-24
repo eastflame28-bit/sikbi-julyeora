@@ -8,7 +8,7 @@
 //   - 재료 | 양                 (없어도 되는 재료는 '- ?재료 | 양', 대신 쓸 재료는 '- 재료 | 양 | 대체')
 //   = 단계 제목 | 설명 | 불 세기 | 타이머(분) | 다음으로 넘어갈 때 | 팁
 
-export const LIBRARY_FILES = Array.from({ length: 8 }, (_, i) => `data/recipes-${String(i + 1).padStart(2, "0")}.txt`);
+export const LIBRARY_FILES = Array.from({ length: 10 }, (_, i) => `data/recipes-${String(i + 1).padStart(2, "0")}.txt`);
 const DIFF = { 쉬움: "easy", 보통: "medium", 어려움: "hard" };
 
 let all = [];
