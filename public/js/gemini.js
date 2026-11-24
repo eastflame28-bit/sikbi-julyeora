@@ -113,7 +113,7 @@ const SYSTEM_PROMPT = `당신은 한국 가정식 조리 도우미다. 지정된
 - 조건을 만족하는 요리가 없으면 status="no_match"와 이유(message)를 돌려준다.
 
 [설명 방식]
-- 요리를 처음 하는 사람도 따라 할 수 있게 쓴다. 한 단계에 한 가지 행동, 단계는 4~8개.
+- 요리를 처음 하는 사람도 따라 할 수 있게 쓴다. 한 단계에 한 가지 행동, 단계는 3~6개. 문장은 짧고 분명하게.
 - 써는 크기(cm), 양, 불 세기(heat), 시간(timer_seconds), 다음 단계로 넘어가는 상태(done_when)를 쓴다.
 - tip에는 흔한 실수와 해결법을 쓴다. 덜 익은 고기, 뜨거운 기름 같은 안전 주의는 빼지 않는다.
 - substitute에는 그 재료가 없을 때 대신 쓸 재료와 양을 쓴다("버터 대신 식용유 1큰술"). 없으면 null.
@@ -174,6 +174,15 @@ const OUTPUT = {
   propertyOrdering: ["status", "message", "recipes"],
 };
 
+// 레시피 쓰기는 깊게 '생각'할 필요가 없어서 생각 단계를 끄거나 줄인다.
+// 제미나이 2.5 flash는 기본으로 오래 생각해서 답이 30초~1분 걸리는데, 끄면 10~20초로 줄어든다.
+function thinkingFor(model) {
+  const m = modelLabel(model);
+  if (/^gemini-2.5-flash/.test(m)) return { thinkingBudget: 0 };
+  if (/^gemini-(3|[4-9])/.test(m) || m === "gemini-flash-latest") return { thinkingLevel: "low" };
+  return null;
+}
+
 async function generate(parts, system, onStatus = () => {}) {
   let info = current();
   if (!info) throw new GeminiError("먼저 위쪽 'AI 설정'에서 제미나이 키를 연결해 주세요.", "nokey");
@@ -182,17 +191,26 @@ async function generate(parts, system, onStatus = () => {}) {
     try { info = { ...info, models: rankModels((await call("models?pageSize=200", info.key)).models || []) }; saveInfo(info); }
     catch { info = { ...info, models: [info.model] }; }
   }
-  const body = {
-    systemInstruction: { parts: [{ text: system }] },
-    contents: [{ role: "user", parts }],
-    generationConfig: { responseMimeType: "application/json", responseSchema: OUTPUT, temperature: 0.8 },
+  const body = (model, think = true) => {
+    const generationConfig = { responseMimeType: "application/json", responseSchema: OUTPUT, temperature: 0.8, maxOutputTokens: 8192 };
+    const thinking = think && thinkingFor(model);
+    if (thinking) generationConfig.thinkingConfig = thinking;
+    return { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts }], generationConfig };
   };
   // 모델이 바쁘거나(503) 그 모델의 무료 한도가 찼으면(429) 다음 모델로 바로 넘어간다
   let data, lastErr;
   for (const [i, model] of info.models.entries()) {
     if (i > 0) onStatus(`첫 모델이 바빠서 ${modelLabel(model)}에게 다시 묻는 중이에요…`);
-    try { data = await call(`${model}:generateContent`, info.key, body, 50000); break; }
-    catch (e) { lastErr = e; if (e.code !== "busy" && e.code !== "quota") throw e; }
+    try { data = await call(`${model}:generateContent`, info.key, body(model), 45000); break; }
+    catch (e) {
+      // 생각 줄이기 설정을 모르는 모델이면 설정 없이 한 번 더 묻는다
+      if (e.code === "bad" && thinkingFor(model)) {
+        try { data = await call(`${model}:generateContent`, info.key, body(model, false), 45000); break; }
+        catch (e2) { e = e2; }
+      }
+      lastErr = e;
+      if (e.code !== "busy" && e.code !== "quota") throw e;
+    }
   }
   if (!data) throw lastErr;
   if (data.promptFeedback?.blockReason) throw new GeminiError("제미나이가 이 요청에는 답하지 않았어요. 재료를 바꿔 다시 시도해 주세요.", "blocked");

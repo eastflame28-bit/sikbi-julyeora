@@ -254,7 +254,7 @@ function renderTopbar() {
         <p class="muted small">키가 없어도 기본 레시피로 찾을 수 있어요. 키를 넣으면 AI가 내 재료에 맞춘 요리를 더 찾아 줘요.</p>
         <label class="sr-only" for="key-input">제미나이 API 키</label>
         <div class="add-row">
-          <input class="input" id="key-input" data-key="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="AI Studio에서 복사한 키 붙여 넣기" data-enter="ai-connect" ${k.checking ? "disabled" : ""}>
+          <input class="input" id="key-input" data-key="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="AI Studio에서 복사한 키를 붙여 넣으면 바로 연결돼요" data-enter="ai-connect" ${k.checking ? "disabled" : ""}>
           <button class="btn btn-primary" data-act="ai-connect" data-key="ai-connect" ${k.checking ? "disabled" : ""}>${k.checking ? "확인 중…" : "연결"}</button>
         </div>
         ${k.error ? `<p class="err" role="alert">${icon("alert")}${esc(k.error)}</p>` : ""}
@@ -881,6 +881,12 @@ function subsListHtml() {
     </div>`).join("")}</div>
   </section>`).join("");
 }
+
+// 키를 붙여 넣으면 Enter를 누르지 않아도 바로 연결한다
+document.addEventListener("paste", (e) => {
+  if (e.target.id !== "key-input" || state.key.checking) return;
+  setTimeout(() => { if ($("#key-input")?.value.trim().length >= 20) connectKey(); }, 0);
+});
 
 document.addEventListener("input", (e) => {
   if (e.target.id === "dish-input") { searchDish(e.target.value); return; }
